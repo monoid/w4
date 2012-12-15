@@ -35,4 +35,19 @@ var chat;
 
 $(document).ready(function () {
     chat = new Chat("chat");
+
+    $('#loginbtn').click(function () {
+        if ($('#username').val()) {
+            login($('#username').val());
+            $('#login').hide();
+
+            $("#inputline").attr('disabled', null);
+            $("#sendbtn").attr('disabled', null);
+
+            $("#sendbtn").click(function () {
+                message($("#inputline").val());
+                $("#inputline").val('');
+            });
+        }
+    });
 });

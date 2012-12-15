@@ -5,7 +5,16 @@
     <link rel="stylesheet" href="chat.css" type="text/css" />
   </head>
 <body>
+<div id="login">
+  <label for="username">Username: </label><input id="username"></input><br />
+  <input type="button" id="loginbtn" value="Login"></input>
+</div>
 <div id="chat">
+</div>
+<div id="input">
+  <input id="inputline" size="128" disabled="disabled"
+  autocomplete="off"></input><br />
+  <input type="button" id="sendbtn" value="Send" disabled="disabled"></input>
 </div>
 <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.8.2/jquery.min.js" type="text/javascript"></script>
 <script src="chat.js" type="text/javascript"></script>
