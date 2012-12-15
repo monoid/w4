@@ -27,10 +27,8 @@ class Channel():
     def setPoll(self, poll):
         self.ts = time.time()
         if self.poll:
-            print 'setPoll: closing old poll'
             self.poll.finish()
         self.poll = poll
-        print 'setPoll: set new poll'
         notify = self.poll.notifyFinish()
         notify.addCallback(self._finishCb, self.poll)
         notify.addErrback(self._finishCb, self.poll)
@@ -47,14 +45,12 @@ class Channel():
 
     def sendMessages(self, messages):
         self.ts = time.time()
-        print "Sending %s to %s" % (messages, self.cid)
         if len(self.messages) >= 100:
             self.messages = messages
         else:
             self.messages += messages
         print self.poll
         if self.poll is not None:
-            print 'Messages: %s' % (self.messages,)
             self.poll.setHeader('Content-type', 'text/json')
             json.dump(self.messages, self.poll)
             self.poll.finish()
@@ -77,14 +73,10 @@ class W4WebRequest(Request):
     #     self.reqctor = reactor
 
     def process(self):
-        print 'HHHHHHHHHH'+self.path
         if self.path == '/ajax/poll':
             chan = self.ensureChannel(True)
             if chan is not None:
-                print "Ajax poll", chan, self
                 chan.setPoll(self)
-            else:
-                print "chan is None"
         elif self.path == '/ajax/post':
             user = users.get(self.getCookie('auth'), None)
             if user:
@@ -116,17 +108,17 @@ class W4WebRequest(Request):
 
     def ensureChannel(self, poll=False):
         cid = self.getCookie('chan')
-        print "cookie %s" % (cid,)
         if not cid or not Channel.channels.get(cid, False):
             # Create new channel
             Channel.cid += 1
             cid = str(Channel.cid)
-            print 'Creating cookie %s' % (cid,)
             if poll:
                 self.addCookie('chan', cid)
                 self.setHeader('Content-type', 'text/json')
                 self.write('[]')
                 self.finish()
+                Channel(cid)
+                return None
             return Channel(cid)
         else:
             return Channel.channels[cid]
