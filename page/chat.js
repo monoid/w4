@@ -10,8 +10,7 @@ Chat.prototype.message = function (str) {
 function login(username) {
     $.ajax({ url: '/ajax/login',
              data: { 'name': username },
-             type: 'POST',
-             success: poll
+             type: 'POST'
            });
 }
 
@@ -22,14 +21,14 @@ function message(msg) {
            });
 }   
 
-function poll(){
+(function poll(){
     $.ajax({ url: "/ajax/poll", success: function(data){
         //Update your dashboard gauge
         for (var i in data) {
             chat.message(data[i]);
         }
     }, dataType: "json", complete: poll, timeout: 30000 });
-};
+})();
 
 
 var chat;
