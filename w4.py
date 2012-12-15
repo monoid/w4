@@ -1,5 +1,6 @@
 from twisted.web.http import Request, HTTPChannel, HTTPFactory
 import json
+import time
 
 class User:
     name = None
@@ -21,8 +22,10 @@ class Channel():
         self.cid = cid
         self.messages = []
         Channel.channels[cid] = self
+        self.ts = time.time()
 
     def setPoll(self, poll):
+        self.ts = time.time()
         if self.poll:
             print 'setPoll: closing old poll'
             self.poll.finish()
@@ -35,6 +38,7 @@ class Channel():
             self.sendMessages([])
 
     def setUser(self, user):
+        self.ts = time.time()
         self.user = user
 
     def _finishCb(self, ignore, chan):
@@ -42,6 +46,7 @@ class Channel():
             self.poll = None
 
     def sendMessages(self, messages):
+        self.ts = time.time()
         print "Sending %s to %s" % (messages, self.cid)
         if len(self.messages) >= 100:
             self.messages = messages
