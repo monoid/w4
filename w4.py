@@ -113,14 +113,14 @@ class W4WebRequest(Request):
             # Create new channel
             Channel.cid += 1
             cid = sha.sha(SALT+str(Channel.cid)+str(self.getClientIP() or '')+str(time.time())).hexdigest()[-24:]
+            ch = Channel(cid)
+            self.addCookie('chan', cid);
             if poll:
-                self.addCookie('chan', cid)
-                self.setHeader('Content-type', 'text/json')
-                self.write('[]')
-                self.finish()
-                Channel(cid)
+                ch.setPoll(self)
+                ch.sendMessages([])
                 return None
-            return Channel(cid)
+            else:
+                return ch
         else:
             return Channel.channels[cid]
             
