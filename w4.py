@@ -6,6 +6,8 @@ import weakref
 
 SALT='a38a72ca6fdf3a7305ceaeb1dea1ee1ad761bc3f'
 
+TIMEOUT=600 # Ten minutes
+
 # TODO: add numeric id?
 class User:
     name = None
@@ -100,12 +102,19 @@ class Channel():
             # should store them elsewhere...
 
     @classmethod
-    def gc(interval):
+    def gc(self, interval=TIMEOUT):
         now = time.time()
-        for cid, chan in Channel.channels.items():
-            if now - chan.ts >= ts:
+        cnt = 0
+        size = len(self.channels)
+        for cid, chan in self.channels.items():
+            if now - chan.ts >= interval:
+                cnt += 1
                 del self.channels[cid]
 
+
+def runGc(reactor):
+    Channel.gc()
+    reactor.callLater(TIMEOUT, runGc, reactor)
 
 
 Channel.cid = 0
