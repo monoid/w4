@@ -1,6 +1,7 @@
 from twisted.web.http import Request, HTTPChannel, HTTPFactory
 import json
 import time
+import sha
 
 class User:
     name = None
@@ -111,7 +112,7 @@ class W4WebRequest(Request):
         if not cid or not Channel.channels.get(cid, False):
             # Create new channel
             Channel.cid += 1
-            cid = str(Channel.cid)
+            cid = sha.sha(SALT+str(Channel.cid)+str(self.getClientIP() or '')+str(time.time())).hexdigest()[-24:]
             if poll:
                 self.addCookie('chan', cid)
                 self.setHeader('Content-type', 'text/json')
