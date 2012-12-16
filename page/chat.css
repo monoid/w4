@@ -1,4 +1,24 @@
 #chat {
-    width: 100%;
+    position: absolute;
+    top: 2px;
+    left: 5px;
+    right: 5px;
+    bottom: 6em;
     border: 1px solid black;
+}
+
+#login {
+    position: absolute;
+    top: 2px;
+    left: 5px;
+    right: 5px;
+    bottom: 6em;
+    background: solid white;
+}
+
+#input {
+    height: 5em;
+    width: 90%;
+    position: absolute;
+    left:0; bottom: 0;
 }
