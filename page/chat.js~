@@ -44,8 +44,6 @@ $(document).ready(function () {
             $("#inputline").attr('disabled', null);
             $("#sendbtn").attr('disabled', null);
 
-            $("#chat").show();
-
             $("#sendbtn").click(function () {
                 message($("#inputline").val());
                 $("#inputline").val('');

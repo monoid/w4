@@ -5,7 +5,7 @@
     <link rel="stylesheet" href="chat.css" type="text/css" />
   </head>
 <body>
-<div id="chat" style="display:none">
+<div id="chat">
 </div>
 <div id="input">
   <input id="inputline" size="64" disabled="disabled"
