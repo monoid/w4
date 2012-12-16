@@ -3,15 +3,51 @@ import json
 import time
 import sha
 
+SALT='a38a72ca6fdf3a7305ceaeb1dea1ee1ad761bc3f'
+
 class User:
     name = None
 
     def __init__(self, name):
         self.name = name
 
-# TODO: we have to create a random id for each subscriber And use it
-# to avoid missing messages...  Or is it enough to add increasing id
-# for each message?
+
+# TODO: group should have an ACL.  Even public group has an ACL where
+# its owners are listed.
+class Group:
+    name = None
+    public = True
+    channels = None
+    users = None
+
+    def __init__(self, name):
+        self.name = name
+        self.channels = weakref.WeakValueDictionary()
+        self.users = weakref.WeakValueDictionary()
+
+    def joinChannel(self, chan):
+        if self.public:
+            self.channels[chan.cid] = chan
+        else:
+            # TODO:
+            pass
+
+    def leaveChannel(self, chan):
+        del self.channels[chan.cid]
+
+    def joinUser(self, user):
+        # TODO: notify group subscribers about user join
+        if self.public:
+            self.users[user.name] = user
+        else:
+            # TODO
+            pass
+
+    def leaveUser(self, user):
+        # TODO: notify group subscribers
+        del self.users[user.name]
+
+
 class Channel():
     cid = None
     messages = None
