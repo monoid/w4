@@ -2,9 +2,11 @@ from twisted.web.http import Request, HTTPChannel, HTTPFactory
 import json
 import time
 import sha
+import weakref
 
 SALT='a38a72ca6fdf3a7305ceaeb1dea1ee1ad761bc3f'
 
+# TODO: add numeric id?
 class User:
     name = None
 
@@ -96,6 +98,15 @@ class Channel():
             # poll has finished with success.  We
             # may need them to resend.  Or we
             # should store them elsewhere...
+
+    @classmethod
+    def gc(interval):
+        now = time.time()
+        for cid, chan in Channel.channels.items():
+            if now - chan.ts >= ts:
+                del self.channels[cid]
+
+
 
 Channel.cid = 0
 Channel.channels = {}
