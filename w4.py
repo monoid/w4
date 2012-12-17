@@ -5,7 +5,6 @@ from twisted.web.resource import Resource
 from zope.interface import Interface, Attribute, implements
 
 import json
-import sha
 import time
 import weakref
 
