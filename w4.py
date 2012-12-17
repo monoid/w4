@@ -70,7 +70,7 @@ class User():
     implements(IUser)
 
     def __init__(self, session):
-        name = None
+        self.name = None
 
 User.users = {}
 
@@ -128,8 +128,11 @@ class Channel():
             # should store them elsewhere...
             
     def close(self, session):
-        self.sendMessage([])
+        self.sendMessages([])
         del Channel.channels[session.uid]
+        if self.user and self.user.name:
+            del User.users[self.user.name]
+            Channel.broadcast({'cmd': 'leave', 'user': self.user.name})
 
     @classmethod
     def ensureChannel(self, request, poll=False):
@@ -140,6 +143,11 @@ class Channel():
 
         if not inited.inited:
             inited.inited = True
+            session.sessionTimeout = 60 # DEBUG
+            def onExpire():
+                print "Session expire... Closing."
+                ch.close(session)
+            exp = session.notifyOnExpire(onExpire)
             if poll:
                 ch.setPoll(request)
                 ch.sendMessages([])
@@ -150,7 +158,6 @@ class Channel():
     def broadcast(self, message):
         message['ts'] = int(1000*time.time())
         for chan in self.channels.values():
-            print chan, message
             chan.sendMessages([message])
 
 Channel.channels = {}
@@ -164,19 +171,20 @@ class Login(Resource):
     isLeaf = True
 
     def render_POST(self, request):
-        chan = Channel.ensureChannel(request)
         session = request.getSession()
         user = IUser(session)
         user.name = request.args['name'][0]
+
+        if user.name not in User.users:
+            message = {'cmd': 'join',
+                       'user': user.name
+                      }
+            User.users[user.name] = user
+            Channel.broadcast(message)
+
+        chan = Channel.ensureChannel(request)
         # TODO: check if name is valid
         chan.setUser(user)
-
-        User.users[user.name] = user
-
-        message = {'cmd': 'join',
-                   'user': user.name
-                   }
-        Channel.broadcast(message)
 
         return json.dumps({'users': User.users.keys()})
 
