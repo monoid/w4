@@ -13,9 +13,18 @@ Chat.prototype.message = function (obj) {
         break;
 
         case 'join':
+        msg.append($('<span>').addClass(obj.cmd)
+                   .text(obj.user+" joins."));
+
+        $('#roster-list').append($("<li>").text(obj.user));
+        break;
+
         case 'leave':
         msg.append($('<span>').addClass(obj.cmd)
-                   .text(obj.user+" "+(obj.cmd == 'join' ? "joins." : "leaves.")));
+                   .text(obj.user+" leaves."));
+        $('#roster-list>li').filter(function (li) {
+            return ($(li).text() == obj.user);
+        }).eq(0).remove();
         break;
     }
     msg.appendTo(this.el);
@@ -25,7 +34,16 @@ Chat.prototype.message = function (obj) {
 function login(username) {
     $.ajax({ url: '/ajax/login',
              data: { 'name': username },
-             type: 'POST'
+             dataType: 'json',
+             type: 'POST',
+             success: function (data) {
+                 // TODO: dedicated class for roster that handles duplicated
+                 // entries
+                 var rosterList = $('#roster-list');
+                 for (var i in data.users) {
+                     rosterList.append($("<li>").text(data.users[i]));
+                 }
+             }
            });
 }
 

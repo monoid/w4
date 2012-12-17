@@ -72,6 +72,8 @@ class User():
     def __init__(self, session):
         name = None
 
+User.users = {}
+
 registerAdapter(User, server.Session, IUser)
 
 
@@ -151,10 +153,10 @@ class Channel():
             print chan, message
             chan.sendMessages([message])
 
-
 Channel.channels = {}
 
 registerAdapter(Channel, server.Session, IChannel)
+
 
 ######################################################################
 
@@ -169,11 +171,14 @@ class Login(Resource):
         # TODO: check if name is valid
         chan.setUser(user)
 
+        User.users[user.name] = user
+
         message = {'cmd': 'join',
                    'user': user.name
                    }
         Channel.broadcast(message)
-        return "OK"
+
+        return json.dumps({'users': User.users.keys()})
 
 class Logout(Resource):
     isLeaf = True
@@ -187,7 +192,10 @@ class Logout(Resource):
         message = {'cmd': 'join',
                    'user': user.name
                    }
+
         Channel.broadcast(message)
+
+        del User.users[user.name]
 
         return 'OK'
 
