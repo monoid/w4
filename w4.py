@@ -192,12 +192,12 @@ class Poll(Resource):
             chan.setPoll(request)
         return server.NOT_DONE_YET
 
+    render_POST = render_GET
+
 
 ######################################################################
 
 root = static.File("static/")
-root.putChild("chat.css", static.File("static/chat.css"))
-root.putChild("chat.js", static.File("static/chat.js"))
 
 ajax = static.File("static/no-such-file")
 
