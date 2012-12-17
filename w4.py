@@ -1,7 +1,10 @@
+from twisted.web import static, server
 from twisted.web.http import Request, HTTPChannel, HTTPFactory
+from twisted.web.resource import Resource
+
 import json
-import time
 import sha
+import time
 import weakref
 
 SALT='a38a72ca6fdf3a7305ceaeb1dea1ee1ad761bc3f'
@@ -113,6 +116,24 @@ class Channel():
                 cnt += 1
                 del self.channels[cid]
 
+    @classmethod
+    def ensureChannel(self, request, poll=False):
+        cid = request.getCookie('chan')
+        if not cid or not Channel.channels.get(cid, False):
+            # Create new channel
+            self.cid += 1
+            cid = sha.sha(SALT+str(self.cid)+str(request.getClientIP() or '')+str(time.time())).hexdigest()[-24:]
+            ch = Channel(cid)
+            request.addCookie('chan', cid);
+            if poll:
+                ch.setPoll(request)
+                ch.sendMessages([])
+                return None
+            else:
+                return ch
+        else:
+            return self.channels[cid]
+
 
 def runGc(reactor):
     Channel.gc()
@@ -126,65 +147,65 @@ Channel.channels = {}
 # Currently cookie is username, later we use something more secure
 users = {}
 
-class W4WebRequest(Request):
-    # def __init__(self, channel, queued, reactor=reactor):
-    #     Request.__init__(self, channel, queued)
-    #     self.reqctor = reactor
 
-    def process(self):
-        if self.path == '/ajax/poll':
-            chan = self.ensureChannel(True)
-            if chan is not None:
-                chan.setPoll(self)
-        elif self.path == '/ajax/post':
-            user = users.get(self.getCookie('auth'), None)
-            if user:
-                message = "%s: %s" % (user.name, self.args.get('message', ['Error'])[0])
-                for chan in Channel.channels.values():
-                    chan.sendMessages([message])
-                self.write('OK')
-            else:
-                # TODO: proper code
-                self.setResponseCode(403)
-                self.write("403 You are not logged in.\n")
-            self.finish()
-        elif self.path == '/ajax/login':
-            chan = self.ensureChannel()
-            user = User(self.args['name'][0])
-            users[user.name] = user
-            chan.setUser(user)
-            self.addCookie('auth', user.name)
-            self.write('OK')
-            self.finish()
-        elif self.path == '/ajax/logout':
-            del users[self.getCookie('auth')]
-            self.write('OK')
-            self.finish()
+######################################################################
+
+class Login(Resource):
+    isLeaf = True
+
+    def render_POST(self, request):
+        chan = Channel.ensureChannel(request)
+        user = User(request.args['name'][0])
+        users[user.name] = user
+        chan.setUser(user)
+        request.addCookie('auth', user.name)
+        return "OK"
+
+class Logout(Resource):
+    isLeaf = True
+
+    def render_POST(self, request):
+        del users[request.getCookie('auth')]
+        return 'OK'
+
+class Post(Resource):
+    isLeaf = True
+
+    def render_POST(self, request):
+        user = users.get(request.getCookie('auth'), None)
+        if user:
+            message = "%s: %s" % (user.name, request.args.get('message', ['Error'])[0])
+            for chan in Channel.channels.values():
+                chan.sendMessages([message])
+            return "OK"
         else:
-            self.setResponseCode(404, "Not found")
-            self.write("404 Not found\n")
-            self.finish()
+            # TODO: proper code
+            request.setResponseCode(403)
+            return "403 You are not logged in.\n"
 
-    def ensureChannel(self, poll=False):
-        cid = self.getCookie('chan')
-        if not cid or not Channel.channels.get(cid, False):
-            # Create new channel
-            Channel.cid += 1
-            cid = sha.sha(SALT+str(Channel.cid)+str(self.getClientIP() or '')+str(time.time())).hexdigest()[-24:]
-            ch = Channel(cid)
-            self.addCookie('chan', cid);
-            if poll:
-                ch.setPoll(self)
-                ch.sendMessages([])
-                return None
-            else:
-                return ch
-        else:
-            return Channel.channels[cid]
-            
+class Poll(Resource):
+    isLeaf = True
 
-class W4WebChannel(HTTPChannel):
-    requestFactory = W4WebRequest
+    def render_GET(self, request):
+        chan = Channel.ensureChannel(request, True)
+        if chan:
+            chan.setPoll(request)
+        return server.NOT_DONE_YET
 
-class W4WebFactory(HTTPFactory):
-    protocol = W4WebChannel
+
+######################################################################
+
+root = static.File("static/")
+root.putChild("chat.css", static.File("static/chat.css"))
+root.putChild("chat.js", static.File("static/chat.js"))
+
+ajax = static.File("static/no-such-file")
+
+root.putChild("ajax", ajax)
+
+ajax.putChild("poll", Poll())
+ajax.putChild("post", Post())
+ajax.putChild("login", Login())
+ajax.putChild("logout", Logout())
+
+site = server.Site(root)
