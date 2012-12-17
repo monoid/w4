@@ -23,7 +23,7 @@ Chat.prototype.message = function (obj) {
         msg.append($('<span>').addClass(obj.cmd)
                    .text(obj.user+" leaves."));
         $('#roster-list>li').filter(function (li) {
-            return ($(li).text() == obj.user);
+            return ($(this).text() == obj.user);
         }).eq(0).remove();
         break;
     }
