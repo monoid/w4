@@ -144,7 +144,6 @@ class Channel():
             inited.inited = True
             session.sessionTimeout = 60 # DEBUG
             def onExpire():
-                print "Session expire... Closing."
                 ch.close(session)
             exp = session.notifyOnExpire(onExpire)
             if poll:
