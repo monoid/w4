@@ -2,6 +2,26 @@
     margin: 10px;
     width: 80%;
     border: 1px solid black;
+    font-family: Arial, san-serif;
+}
+
+.ts {
+    color: red;
+}
+
+.nick {
+    color: brown;
+}
+
+.say {
+}
+
+.join {
+    color: blue;
+}
+
+.leave {
+    color: blue;
 }
 
 #login {
@@ -14,6 +34,7 @@
 }
 
 #input {
+    margin: 10px;
     height: 5em;
     width: 80%;
 }

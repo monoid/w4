@@ -144,6 +144,14 @@ class Channel():
                 return None
         return ch
 
+    @classmethod
+    def broadcast(self, message):
+        message['ts'] = int(1000*time.time())
+        for chan in self.channels.values():
+            print chan, message
+            chan.sendMessages([message])
+
+
 Channel.channels = {}
 
 registerAdapter(Channel, server.Session, IChannel)
@@ -158,7 +166,13 @@ class Login(Resource):
         session = request.getSession()
         user = IUser(session)
         user.name = request.args['name'][0]
+        # TODO: check if name is valid
         chan.setUser(user)
+
+        message = {'cmd': 'join',
+                   'user': user.name
+                   }
+        Channel.broadcast(message)
         return "OK"
 
 class Logout(Resource):
@@ -169,6 +183,12 @@ class Logout(Resource):
         chan = IChannel(session)
         chan.close()
         session.expire() # TODO: remove chan
+
+        message = {'cmd': 'join',
+                   'user': user.name
+                   }
+        Channel.broadcast(message)
+
         return 'OK'
 
 
@@ -179,10 +199,12 @@ class Post(Resource):
         session = request.getSession()
         user = IUser(session)
         if user.name:
-            message = "%s: %s" % (user.name, request.args.get('message', ['Error'])[0])
-            for chan in Channel.channels.values():
-                print chan, chan.poll
-                chan.sendMessages([message])
+            message = {'cmd': 'say',
+                       'user': user.name,
+                       'message': request.args.get('message', ['Error'])[0]
+                       }
+
+            Channel.broadcast(message)
             return "OK"
         else:
             request.setResponseCode(403)

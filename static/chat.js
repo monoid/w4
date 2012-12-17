@@ -2,8 +2,23 @@ function Chat(id) {
     this.el = $('#'+id);
 }
 
-Chat.prototype.message = function (str) {
-    $('<div class="msg">').text(str).appendTo(this.el);
+Chat.prototype.message = function (obj) {
+    var ts = new Date(obj.ts)
+    var msg = $('<div>')
+        .append($('<span class="ts">').text('['+ts.getHours()+':'+ts.getMinutes()+'] '));
+    switch (obj.cmd) {
+        case 'say':
+        msg.append($('<span class="nick">').text(obj.user+": "),
+                   $('<span class="say">').text(obj.message));
+        break;
+
+        case 'join':
+        case 'leave':
+        msg.append($('<span>').addClass(obj.cmd)
+                   .text(obj.user+" "+(obj.cmd == 'join' ? "joins." : "leaves.")));
+        break;
+    }
+    msg.appendTo(this.el);
 };
 
 
