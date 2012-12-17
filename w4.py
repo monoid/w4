@@ -1,22 +1,15 @@
+from twisted.python.components import registerAdapter
 from twisted.web import static, server
 from twisted.web.http import Request, HTTPChannel, HTTPFactory
 from twisted.web.resource import Resource
+from zope.interface import Interface, Attribute, implements
 
 import json
 import sha
 import time
 import weakref
 
-SALT='a38a72ca6fdf3a7305ceaeb1dea1ee1ad761bc3f'
-
 TIMEOUT=600 # Ten minutes
-
-# TODO: add numeric id?
-class User:
-    name = None
-
-    def __init__(self, name):
-        self.name = name
 
 
 # TODO: group should have an ACL.  Even public group has an ACL where
@@ -55,21 +48,49 @@ class Group:
         del self.users[user.name]
 
 
+######################################################################
+
+class IInited(Interface):
+    inited = Attribute("Initialized flag")
+
+class Inited:
+    implements(IInited)
+
+    def __init__(self, session):
+        self.inited = False
+
+registerAdapter(Inited, server.Session, IInited)
+
+
+class IUser(Interface):
+    # TODO: id
+    name = Attribute("User name")
+
+class User():
+    implements(IUser)
+
+    def __init__(self, session):
+        name = None
+
+registerAdapter(User, server.Session, IUser)
+
+
+class IChannel(Interface):
+    messages = Attribute("")
+    poll = Attribute("")
+    user = Attribute("")
+    
 class Channel():
-    cid = None
+    implements(IChannel)
     messages = None
     poll = None
     user = None
-    ts = None # Timestamp
 
-    def __init__(self, cid):
-        self.cid = cid
+    def __init__(self, session):
         self.messages = []
-        Channel.channels[cid] = self
-        self.ts = time.time()
+        Channel.channels[session.uid] = self
 
     def setPoll(self, poll):
-        self.ts = time.time()
         if self.poll:
             self.poll.finish()
         self.poll = poll
@@ -80,7 +101,6 @@ class Channel():
             self.sendMessages([])
 
     def setUser(self, user):
-        self.ts = time.time()
         self.user = user
 
     def _finishCb(self, ignore, chan):
@@ -88,12 +108,11 @@ class Channel():
             self.poll = None
 
     def sendMessages(self, messages):
-        self.ts = time.time()
         if len(self.messages) >= 100:
             self.messages = messages
         else:
             self.messages += messages
-        print self.poll
+
         if self.poll is not None:
             self.poll.setHeader('Content-type', 'application/json')
             self.poll.setHeader('Pragma', 'no-cache')
@@ -105,48 +124,29 @@ class Channel():
             # poll has finished with success.  We
             # may need them to resend.  Or we
             # should store them elsewhere...
-
-    @classmethod
-    def gc(self, interval=TIMEOUT):
-        now = time.time()
-        cnt = 0
-        size = len(self.channels)
-        for cid, chan in self.channels.items():
-            if now - chan.ts >= interval:
-                cnt += 1
-                del self.channels[cid]
+            
+    def close(self, session):
+        self.sendMessage([])
+        del Channel.channels[session.uid]
 
     @classmethod
     def ensureChannel(self, request, poll=False):
-        cid = request.getCookie('chan')
-        if not cid or not Channel.channels.get(cid, False):
-            # Create new channel
-            self.cid += 1
-            cid = sha.sha(SALT+str(self.cid)+str(request.getClientIP() or '')+str(time.time())).hexdigest()[-24:]
-            ch = Channel(cid)
-            request.addCookie('chan', cid);
+        session = request.getSession()
+
+        inited = IInited(session)
+        ch = IChannel(session)
+
+        if not inited.inited:
+            inited.inited = True
             if poll:
                 ch.setPoll(request)
                 ch.sendMessages([])
                 return None
-            else:
-                return ch
-        else:
-            return self.channels[cid]
+        return ch
 
-
-def runGc(reactor):
-    Channel.gc()
-    reactor.callLater(TIMEOUT, runGc, reactor)
-
-
-Channel.cid = 0
 Channel.channels = {}
 
-# Users by cookie.
-# Currently cookie is username, later we use something more secure
-users = {}
-
+registerAdapter(Channel, server.Session, IChannel)
 
 ######################################################################
 
@@ -155,33 +155,39 @@ class Login(Resource):
 
     def render_POST(self, request):
         chan = Channel.ensureChannel(request)
-        user = User(request.args['name'][0])
-        users[user.name] = user
+        session = request.getSession()
+        user = IUser(session)
+        user.name = request.args['name'][0]
         chan.setUser(user)
-        request.addCookie('auth', user.name)
         return "OK"
 
 class Logout(Resource):
     isLeaf = True
 
     def render_POST(self, request):
-        del users[request.getCookie('auth')]
+        session = request.getSession()
+        chan = IChannel(session)
+        chan.close()
+        session.expire() # TODO: remove chan
         return 'OK'
+
 
 class Post(Resource):
     isLeaf = True
 
     def render_POST(self, request):
-        user = users.get(request.getCookie('auth'), None)
-        if user:
+        session = request.getSession()
+        user = IUser(session)
+        if user.name:
             message = "%s: %s" % (user.name, request.args.get('message', ['Error'])[0])
             for chan in Channel.channels.values():
+                print chan, chan.poll
                 chan.sendMessages([message])
             return "OK"
         else:
-            # TODO: proper code
             request.setResponseCode(403)
             return "403 You are not logged in.\n"
+
 
 class Poll(Resource):
     isLeaf = True
