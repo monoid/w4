@@ -23,7 +23,6 @@ function message(msg) {
 
 (function poll(){
     $.ajax({ url: "/ajax/poll", success: function(data){
-        //Update your dashboard gauge
         for (var i in data) {
             chat.message(data[i]);
         }
@@ -48,7 +47,13 @@ $(document).ready(function () {
 
             $("#sendbtn").click(function () {
                 message($("#inputline").val());
-                $("#inputline").val('');
+                $("#inputline").val('').focus();
+            });
+
+            $('#inputline').keyup(function (evt) {
+                if (evt.keyCode == 13) {
+                    $('#sendbtn').click();
+                }
             });
         }
     });
