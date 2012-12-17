@@ -92,7 +92,9 @@ class Channel():
             self.messages += messages
         print self.poll
         if self.poll is not None:
-            self.poll.setHeader('Content-type', 'text/json')
+            self.poll.setHeader('Content-type', 'application/json')
+            self.poll.setHeader('Pragma', 'no-cache')
+            self.poll.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
             json.dump(self.messages, self.poll)
             self.poll.finish()
             self.poll = None
