@@ -49,18 +49,6 @@ class Group:
 
 ######################################################################
 
-class IInited(Interface):
-    inited = Attribute("Initialized flag")
-
-class Inited:
-    implements(IInited)
-
-    def __init__(self, session):
-        self.inited = False
-
-registerAdapter(Inited, server.Session, IInited)
-
-
 class IUser(Interface):
     # TODO: id
     name = Attribute("User name")
@@ -88,8 +76,13 @@ class Channel():
     user = None
 
     def __init__(self, session):
-        self.messages = []
+        self.messages = [{'cmd': 'ping'}] # Force request completion
+                                          # to set session cookie.
         Channel.channels[session.uid] = self
+        def onExpire():
+            self.close(session)
+        session.notifyOnExpire(onExpire)
+        session.sessionTimeout = 60 # DEBUG
 
     def setPoll(self, poll):
         if self.poll:
@@ -134,25 +127,6 @@ class Channel():
             Channel.broadcast({'cmd': 'leave', 'user': self.user.name})
 
     @classmethod
-    def ensureChannel(self, request, poll=False):
-        session = request.getSession()
-
-        inited = IInited(session)
-        ch = IChannel(session)
-
-        if not inited.inited:
-            inited.inited = True
-            session.sessionTimeout = 60 # DEBUG
-            def onExpire():
-                ch.close(session)
-            exp = session.notifyOnExpire(onExpire)
-            if poll:
-                ch.setPoll(request)
-                ch.sendMessages([])
-                return None
-        return ch
-
-    @classmethod
     def broadcast(self, message):
         message['ts'] = int(1000*time.time())
         for chan in self.channels.values():
@@ -180,7 +154,7 @@ class Login(Resource):
             User.users[user.name] = user
             Channel.broadcast(message)
 
-        chan = Channel.ensureChannel(request)
+        chan = IChannel(session)
         # TODO: check if name is valid
         chan.setUser(user)
 
@@ -236,9 +210,8 @@ class Poll(Resource):
     isLeaf = True
 
     def render_GET(self, request):
-        chan = Channel.ensureChannel(request, True)
-        if chan:
-            chan.setPoll(request)
+        chan = IChannel(request.getSession())
+        chan.setPoll(request)
         return server.NOT_DONE_YET
 
     render_POST = render_GET
