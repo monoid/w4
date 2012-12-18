@@ -212,11 +212,18 @@ class Post(Resource):
     def render_POST(self, request):
         session = request.getSession()
         user = IUser(session)
+        msg = request.args.get('message', ['Error'])[0].strip()
         if user.name:
-            message = {'cmd': 'say',
-                       'user': user.name,
-                       'message': request.args.get('message', ['Error'])[0]
-                       }
+            if msg.startswith("/me "):
+                message = {'cmd': 'me',
+                           'user': user.name,
+                           'message': msg[4:]
+                           }
+            else:
+                message = {'cmd': 'say',
+                           'user': user.name,
+                           'message': msg
+                           }
 
             Channel.broadcast(message)
             return "OK"

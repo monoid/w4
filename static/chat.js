@@ -26,6 +26,18 @@ Chat.prototype.message = function (obj) {
             return ($(this).text() == obj.user);
         }).eq(0).remove();
         break;
+
+        case 'ping':
+        // Do nothing
+        break;
+
+        case 'me':
+        msg.append($('<span class="me">').text(obj.user+" "+obj.message));
+        break;
+
+        case 'sysmsg':
+        msg.append($('<span class="sysmsg">').text(obj.message));
+        break;
     }
     msg.appendTo(this.el);
 };
