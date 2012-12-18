@@ -34,8 +34,8 @@ Chat.prototype.message = function (obj) {
         break;
 
         case 'ping':
-        // Do nothing
-        break;
+        // Do nothing, do not even insert message
+        return;
 
         case 'me':
         msg.append($('<span class="me">').text(obj.user+" "+obj.message));
