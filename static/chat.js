@@ -1,3 +1,5 @@
+var TIMEOUT = 120000; // 2 minutes
+
 function datefmt(ts) {
     var h = ('0'+ts.getHours()).slice(-2);
     var m = ('0'+ts.getMinutes()).slice(-2);
@@ -77,7 +79,7 @@ function message(msg) {
         for (var i in data) {
             chat.message(data[i]);
         }
-    }, dataType: "json", complete: poll, timeout: 30000, type: 'POST' });
+    }, dataType: "json", complete: poll, timeout: TIMEOUT, type: 'POST' });
 })();
 
 
