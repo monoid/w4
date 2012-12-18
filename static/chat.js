@@ -103,7 +103,7 @@ $(document).ready(function () {
             });
 
             $('#inputline').keyup(function (evt) {
-                if (evt.keyCode == 13) {
+                if (evt.ctrlKey && (evt.keyCode == 13 || evt.keyCode == 10)) {
                     $('#sendbtn').click();
                 }
             });
