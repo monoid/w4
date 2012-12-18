@@ -1,3 +1,9 @@
+function datefmt(ts) {
+    var h = ('0'+ts.getHours()).slice(-2);
+    var m = ('0'+ts.getMinutes()).slice(-2);
+    return h+':'+m;
+}
+
 function Chat(id) {
     this.el = $('#'+id);
 }
@@ -5,7 +11,7 @@ function Chat(id) {
 Chat.prototype.message = function (obj) {
     var ts = new Date(obj.ts)
     var msg = $('<div>')
-        .append($('<span class="ts">').text('['+ts.getHours()+':'+ts.getMinutes()+'] '));
+        .append($('<span class="ts">').text('['+datefmt(ts)+'] '));
     switch (obj.cmd) {
         case 'say':
         msg.append($('<span class="nick">').text(obj.user+": "),
