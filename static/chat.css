@@ -7,7 +7,7 @@
     font-family: Arial, san-serif;
     min-height: 10em;
     padding: 0.5ex;
-    white-space: pre;
+    white-space: pre-wrap;
 }
 
 .ts {
