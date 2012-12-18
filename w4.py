@@ -8,7 +8,7 @@ import json
 import time
 import weakref
 
-TIMEOUT=600 # Ten minutes
+TIMEOUT=300 # Ten minutes
 
 
 # TODO: group should have an ACL.  Even public group has an ACL where
@@ -82,7 +82,7 @@ class Channel():
         def onExpire():
             self.close(session)
         session.notifyOnExpire(onExpire)
-        session.sessionTimeout = 60 # DEBUG
+        session.sessionTimeout = TIMEOUT
 
     def setPoll(self, poll):
         if self.poll:
