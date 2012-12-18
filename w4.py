@@ -145,7 +145,11 @@ class Login(Resource):
     def render_POST(self, request):
         session = request.getSession()
         user = IUser(session)
+        # TODO: logout old user...
+        # TODO: check if name is valid
         user.name = request.args['name'][0]
+
+        roster = {'users': User.users.keys()}
 
         if user.name not in User.users:
             message = {'cmd': 'join',
@@ -155,10 +159,9 @@ class Login(Resource):
             Channel.broadcast(message)
 
         chan = IChannel(session)
-        # TODO: check if name is valid
         chan.setUser(user)
 
-        return json.dumps({'users': User.users.keys()})
+        return json.dumps(roster)
 
 class Logout(Resource):
     isLeaf = True
