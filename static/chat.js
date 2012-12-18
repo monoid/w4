@@ -77,7 +77,7 @@ function message(msg) {
         for (var i in data) {
             chat.message(data[i]);
         }
-    }, dataType: "json", complete: poll, timeout: 30000 });
+    }, dataType: "json", complete: poll, timeout: 30000, type: 'POST' });
 })();
 
 
