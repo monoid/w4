@@ -2,6 +2,8 @@
     margin: 10px;
     width: 79%;
     border: 2px solid black;
+    border-radius: 5px;
+    background: #fee;
     font-family: Arial, san-serif;
     min-height: 10em;
     padding: 0.5ex;
@@ -56,13 +58,12 @@
     right: 0;
     width: 18%;
     top: 10px;
-    border-left: 2px solid black;
-    border-top: 2px solid black;
-    border-bottom: 2px solid black;
+    border: 2px solid black;
+    border-radius: 5px 0px 0px 5px;
     padding: 2px;
     margin: 0;
     min-height: 5em;
-    border-radius: 5px 0px 0px 5px;
+    background: #f8f8ff;
 }
 
 #roster-list li {
