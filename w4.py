@@ -193,9 +193,9 @@ class Logout(Resource):
         session = request.getSession()
         chan = IChannel(session)
         chan.close()
-        session.expire() # TODO: remove chan
+        session.expire()
 
-        message = {'cmd': 'join',
+        message = {'cmd': 'leave',
                    'user': user.name
                    }
 
