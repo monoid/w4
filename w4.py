@@ -9,8 +9,8 @@ import time
 import weakref
 
 SESSION_TIMEOUT=300 # Ten minutes
-POLL_TIMEOUT=120    # Two minutes
-GC_PERIOD=30        # Half minute
+POLL_TIMEOUT=120-0.2    # Almost two minutes
+GC_PERIOD=10        # Half minute
 
 # TODO: group should have an ACL.  Even public group has an ACL where
 # its owners are listed.
