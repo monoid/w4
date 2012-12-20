@@ -8,8 +8,9 @@ import json
 import time
 import weakref
 
-TIMEOUT=300 # Ten minutes
-
+SESSION_TIMEOUT=300 # Ten minutes
+POLL_TIMEOUT=120    # Two minutes
+GC_PERIOD=30        # Half minute
 
 # TODO: group should have an ACL.  Even public group has an ACL where
 # its owners are listed.
@@ -68,12 +69,16 @@ class IChannel(Interface):
     messages = Attribute("")
     poll = Attribute("")
     user = Attribute("")
+    ts = Attribute("Poll's timestamp.")
+    to = Attribute("Poll's timeout.")
     
 class Channel():
     implements(IChannel)
     messages = None
     poll = None
     user = None
+    ts = None
+    to = POLL_TIMEOUT
 
     def __init__(self, session):
         self.messages = [{'cmd': 'ping'}] # Force request completion
@@ -82,12 +87,14 @@ class Channel():
         def onExpire():
             self.close(session)
         session.notifyOnExpire(onExpire)
-        session.sessionTimeout = TIMEOUT
+        session.sessionTimeout = SESSION_TIMEOUT
 
     def setPoll(self, poll):
         if self.poll:
             self.poll.finish()
+
         self.poll = poll
+        self.ts = time.time()
         notify = self.poll.notifyFinish()
         notify.addCallback(self._finishCb, self.poll)
         notify.addErrback(self._finishCb, self.poll)
@@ -114,13 +121,17 @@ class Channel():
             json.dump(self.messages, self.poll)
             self.poll.finish()
             self.poll = None
+            self.ts = None
             self.messages = [] # TODO do not clear messages before
             # poll has finished with success.  We
             # may need them to resend.  Or we
             # should store them elsewhere...
             
-    def close(self, session):
+    def flush(self):
         self.sendMessages([])
+        
+    def close(self, session):
+        self.sendMessages([]) # TODO: send 'bye' or something like this
         del Channel.channels[session.uid]
         if self.user and self.user.name:
             del User.users[self.user.name]
@@ -132,10 +143,23 @@ class Channel():
         for chan in self.channels.values():
             chan.sendMessages([message])
 
+    @classmethod
+    def gc(self):
+        ts = time.time()
+        # TODO: it is porbably unsafe to use .itervalues() here...
+        for channel in self.channels.itervalues():
+            if channel.ts is not None and channel.ts + channel.to <= ts:
+                channel.flush()
+
 Channel.channels = {}
+
 
 registerAdapter(Channel, server.Session, IChannel)
 
+
+def runGc(reactor):
+    Channel.gc()
+    reactor.callLater(GC_PERIOD, runGc, reactor)
 
 ######################################################################
 

@@ -1,4 +1,4 @@
-var TIMEOUT = 120000; // 2 minutes
+var TIMEOUT = 180000; // 3 minutes
 
 function datefmt(ts) {
     var h = ('0'+ts.getHours()).slice(-2);
