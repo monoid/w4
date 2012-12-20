@@ -1,4 +1,5 @@
 var TIMEOUT = 180000; // 3 minutes
+var ERR_TIMEOUT = 60000; // 1 minute
 
 function datefmt(ts) {
     var h = ('0'+ts.getHours()).slice(-2);
@@ -79,7 +80,15 @@ function message(msg) {
         for (var i in data) {
             chat.message(data[i]);
         }
-    }, dataType: "json", complete: poll, timeout: TIMEOUT, type: 'POST' });
+        poll();
+    }, dataType: "json",
+             timeout: TIMEOUT,
+             type: 'POST',
+             error: function () {
+                 // TODO inform user
+                 setTimeout(poll, ERR_TIMEOUT);
+             }
+           });
 })();
 
 
