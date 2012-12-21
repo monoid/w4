@@ -4,6 +4,8 @@ from twisted.web.http import Request, HTTPChannel, HTTPFactory
 from twisted.web.resource import Resource
 from zope.interface import Interface, Attribute, implements
 
+from collections import deque
+
 import json
 import time
 import weakref
@@ -140,6 +142,7 @@ class Channel():
     @classmethod
     def broadcast(self, message):
         message['ts'] = int(1000*time.time())
+        history.append(message)
         for chan in self.channels.values():
             chan.sendMessages([message])
 
@@ -161,6 +164,10 @@ def runGc(reactor):
     Channel.gc()
     reactor.callLater(GC_PERIOD, runGc, reactor)
 
+
+history = deque([], 10)
+
+
 ######################################################################
 
 class Login(Resource):
@@ -175,15 +182,16 @@ class Login(Resource):
 
         roster = {'users': User.users.keys()}
 
+        chan = IChannel(session)
+        chan.setUser(user)
+        chan.sendMessages(list(history))
+
         if user.name not in User.users:
             message = {'cmd': 'join',
                        'user': user.name
                       }
             User.users[user.name] = user
             Channel.broadcast(message)
-
-        chan = IChannel(session)
-        chan.setUser(user)
 
         return json.dumps(roster)
 
