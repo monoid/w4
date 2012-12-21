@@ -142,7 +142,7 @@ class Channel():
     @classmethod
     def broadcast(self, message):
         message['ts'] = int(1000*time.time())
-        history.append(message)
+        history.message(message)
         for chan in self.channels.values():
             chan.sendMessages([message])
 
@@ -165,7 +165,24 @@ def runGc(reactor):
     reactor.callLater(GC_PERIOD, runGc, reactor)
 
 
-history = deque([], 10)
+class History:
+    buf = None
+    # Store only particular commands in history.
+    # So we do not login and logout images for user privacy.
+    cmdFilter = []
+
+    def __init__(self):
+        self.buf = deque([], 10)
+        self.cmdFilter = ['say', 'me']
+
+    def message(self, msg):
+        if msg['cmd'] in self.cmdFilter:
+            self.buf.append(msg)
+
+    def __iter__(self):
+        return self.buf.__iter__()
+
+history = History()
 
 
 ######################################################################
