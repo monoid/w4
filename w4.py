@@ -261,12 +261,10 @@ class Post(Resource):
 class Poll(Resource):
     isLeaf = True
 
-    def render_GET(self, request):
+    def render_POST(self, request):
         chan = IChannel(request.getSession())
         chan.setPoll(request)
         return server.NOT_DONE_YET
-
-    render_POST = render_GET
 
 
 ######################################################################
