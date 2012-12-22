@@ -218,6 +218,7 @@ class Logout(Resource):
     def render_POST(self, request):
         session = request.getSession()
         chan = IChannel(session)
+        user = IUser(session)
         chan.close()
         session.expire()
 
