@@ -12,4 +12,4 @@ application = service.Application("W4 chat")
 server = internet.TCPServer(PORT, w4.site)
 server.setServiceParent(application)
 
-w4.runGc(reactor)
+w4.Channel.runGc(reactor)

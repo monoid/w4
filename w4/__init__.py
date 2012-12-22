@@ -151,20 +151,16 @@ class Channel():
     @classmethod
     def gc(cls):
         ts = time.time()
-        # TODO: it is porbably unsafe to use .itervalues() here...
         for channel in cls.channels.itervalues():
-            if channel.ts is not None and channel.ts + channel.to <= ts:
+            if (channel.ts is not None) and (channel.ts + channel.to <= ts):
                 channel.flush()
 
-Channel.channels = {}
-
+    @staticmethod
+    def runGc(reactor):
+        Channel.gc()
+        reactor.callLater(GC_PERIOD, Channel.runGc, reactor)
 
 registerAdapter(Channel, server.Session, IChannel)
-
-
-def runGc(reactor):
-    Channel.gc()
-    reactor.callLater(GC_PERIOD, runGc, reactor)
 
 
 class History:
@@ -188,6 +184,8 @@ history = History()
 
 
 ######################################################################
+#
+# Pages
 
 class Login(Resource):
     isLeaf = True
@@ -195,9 +193,19 @@ class Login(Resource):
     def render_POST(self, request):
         session = request.getSession()
         user = IUser(session)
-        # TODO: logout old user...
+        name = request.args['name'][0].strip()
+
+        # logout old user if any
+        if user.name and user.name != name:
+            message = {
+                'cmd': 'leave',
+                'user': user.name
+            }
+            User.users[user.name] = None
+            Channel.broadcast(message)
+
         # TODO: check if name is valid
-        user.name = request.args['name'][0]
+        user.name = name
 
         roster = {'users': User.users.keys()}
 
@@ -206,13 +214,15 @@ class Login(Resource):
         chan.sendMessages(list(history))
 
         if user.name not in User.users:
-            message = {'cmd': 'join',
-                       'user': user.name
-                      }
+            message = {
+                'cmd': 'join',
+                'user': user.name
+            }
             User.users[user.name] = user
             Channel.broadcast(message)
 
         return json.dumps(roster)
+
 
 class Logout(Resource):
     isLeaf = True
@@ -271,6 +281,9 @@ class Poll(Resource):
 
 
 ######################################################################
+#
+# Setup site
+#
 
 root = static.File("static/")
 
