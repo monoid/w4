@@ -82,6 +82,8 @@ class Channel():
     ts = None
     to = POLL_TIMEOUT
 
+    channels = {} # Class attribute
+
     def __init__(self, session):
         self.messages = [{'cmd': 'ping'}] # Force request completion
                                           # to set session cookie.
@@ -140,17 +142,17 @@ class Channel():
             Channel.broadcast({'cmd': 'leave', 'user': self.user.name})
 
     @classmethod
-    def broadcast(self, message):
+    def broadcast(cls, message):
         message['ts'] = int(1000*time.time())
         history.message(message)
-        for chan in self.channels.values():
+        for chan in cls.channels.values():
             chan.sendMessages([message])
 
     @classmethod
-    def gc(self):
+    def gc(cls):
         ts = time.time()
         # TODO: it is porbably unsafe to use .itervalues() here...
-        for channel in self.channels.itervalues():
+        for channel in cls.channels.itervalues():
             if channel.ts is not None and channel.ts + channel.to <= ts:
                 channel.flush()
 
