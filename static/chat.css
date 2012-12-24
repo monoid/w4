@@ -37,6 +37,10 @@
     color: blue;
 }
 
+.subject {
+    color: brown;
+}
+
 #login {
     position: absolute;
     top: 2px;

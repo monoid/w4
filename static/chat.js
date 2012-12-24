@@ -14,7 +14,9 @@ function Chat(id) {
 Chat.prototype.message = function (obj) {
     var ts = new Date(obj.ts)
     var msg = $('<div>')
-        .append($('<span class="ts">').text('['+datefmt(ts)+'] '));
+    if (obj.cmd != 'subject') {
+        msg.append($('<span class="ts">').text('['+datefmt(ts)+'] '));
+    }
     switch (obj.cmd) {
         case 'say':
         msg.append($('<span class="nick">').text(obj.user+": "),
@@ -47,6 +49,9 @@ Chat.prototype.message = function (obj) {
         case 'sysmsg':
         msg.append($('<span class="sysmsg">').text(obj.message));
         break;
+
+        case 'subject':
+        msg.append($('<span class="subject">').text("Subject: "+obj.message));
     }
     msg.appendTo(this.el);
 };

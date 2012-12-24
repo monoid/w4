@@ -23,6 +23,7 @@ class Group:
     public = True
     channels = None
     history = None
+    subject = None
 
     # Class attribute
     groups = {}
@@ -36,7 +37,10 @@ class Group:
 
     def join(self, chan, nickname):
         if self.public:
-            chan.sendMessages(list(self.history))
+            hist = list(self.history)
+            if self.subject:
+                hist += [{'cmd': 'subject', 'message': self.subject}]
+            chan.sendMessages(hist)
             # Leave group if the channel have been logged before
             if self.name in chan.groups:
                 self.leave(chan)
@@ -310,8 +314,8 @@ class Poll(Resource):
 #
 
 # Create test group
-Group('test')
-
+test = Group('test')
+test.subject = "Testing group"
 
 root = static.File("static/")
 
