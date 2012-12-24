@@ -52,9 +52,9 @@ Chat.prototype.message = function (obj) {
 };
 
 
-function login(username) {
+function login(username, group) {
     $.ajax({ url: '/ajax/login',
-             data: { 'name': username },
+             data: { 'name': username, 'group': group },
              dataType: 'json',
              type: 'POST',
              success: function (data) {
@@ -68,9 +68,9 @@ function login(username) {
            });
 }
 
-function message(msg) {
+function message(msg, group) {
     $.ajax({ url: '/ajax/post',
-             data: { 'message': msg },
+             data: { 'message': msg, 'group': group },
              type: 'POST'
            });
 }   
@@ -99,7 +99,7 @@ $(document).ready(function () {
 
     $('#loginbtn').click(function () {
         if ($('#username').val()) {
-            login($('#username').val());
+            login($('#username').val(), 'test'); // TODO: proper input
             $('#login').hide();
 
             $("#inputline").attr('disabled', null);
@@ -109,7 +109,7 @@ $(document).ready(function () {
             $("#input").show();
 
             $("#sendbtn").click(function () {
-                message($("#inputline").val());
+                message($("#inputline").val(), 'test'); // TODO proper input
                 $("#inputline").val('').focus();
             });
 

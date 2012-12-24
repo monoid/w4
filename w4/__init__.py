@@ -14,40 +14,64 @@ SESSION_TIMEOUT=300 # Ten minutes
 POLL_TIMEOUT=120-0.2    # Almost two minutes
 GC_PERIOD=10        # Half minute
 
+HISTORY_SIZE=10
+
 # TODO: group should have an ACL.  Even public group has an ACL where
 # its owners are listed.
 class Group:
     name = None
     public = True
     channels = None
-    users = None
+    history = None
+
+    # Class attribute
+    groups = {}
 
     def __init__(self, name):
         self.name = name
         self.channels = weakref.WeakValueDictionary()
-        self.users = weakref.WeakValueDictionary()
+        self.history = History()
+        # TODO check if group exists
+        Group.groups[name] = self
 
-    def joinChannel(self, chan):
+    def join(self, chan, nickname):
         if self.public:
-            self.channels[chan.cid] = chan
+            chan.sendMessages(list(self.history))
+            # Leave group if the channel have been logged before
+            if self.name in chan.groups:
+                self.leave(chan)
+
+            self.channels[nickname] = chan
+            chan.groups[self.name] = nickname
+            self.broadcast({
+                'cmd': 'join',
+                'user': nickname
+            })
+            return True
         else:
-            # TODO:
-            pass
+            # TODO: check ACL
+            chan.error('Access denied', self)
+            return False
 
-    def leaveChannel(self, chan):
-        del self.channels[chan.cid]
-
-    def joinUser(self, user):
-        # TODO: notify group subscribers about user join
-        if self.public:
-            self.users[user.name] = user
+    def leave(self, chan):
+        nickname = chan.groups[self.name]
+        if nickname in self.channels:
+            self.broadcast({
+                'cmd': 'leave',
+                'user': nickname
+            })
+            del self.channels[nickname]
+            del chan.groups[self.name]
+            return True
         else:
-            # TODO
-            pass
+            # TODO exception
+            return False
 
-    def leaveUser(self, user):
-        # TODO: notify group subscribers
-        del self.users[user.name]
+    def broadcast(self, message):
+        message['ts'] = int(1000*time.time())
+        self.history.message(message)
+        for chan in self.channels.values():
+            chan.sendMessages([message])
 
 
 ######################################################################
@@ -71,14 +95,17 @@ class IChannel(Interface):
     messages = Attribute("")
     poll = Attribute("")
     user = Attribute("")
-    ts = Attribute("Poll's timestamp.")
-    to = Attribute("Poll's timeout.")
+    groups = Attribute("Dict of channel's group by name.")
+    ts = Attribute("Poll's timestamp")
+    to = Attribute("Poll's timeout")
     
-class Channel():
+class Channel:
     implements(IChannel)
     messages = None
     poll = None
     user = None
+    # Dict groupname -> nickname
+    groups = None
     ts = None
     to = POLL_TIMEOUT
 
@@ -87,7 +114,9 @@ class Channel():
     def __init__(self, session):
         self.messages = [{'cmd': 'ping'}] # Force request completion
                                           # to set session cookie.
+        self.groups = {}
         Channel.channels[session.uid] = self
+        self.uid = session.uid
         def onExpire():
             self.close(session)
         session.notifyOnExpire(onExpire)
@@ -131,22 +160,20 @@ class Channel():
             # may need them to resend.  Or we
             # should store them elsewhere...
             
+    def error(self, error):
+        self.sendMessages([{
+            'cmd': 'error',
+            'message': error
+        }])
     def flush(self):
         self.sendMessages([])
         
     def close(self, session):
-        self.sendMessages([]) # TODO: send 'bye' or something like this
-        del Channel.channels[session.uid]
-        if self.user and self.user.name:
-            del User.users[self.user.name]
-            Channel.broadcast({'cmd': 'leave', 'user': self.user.name})
+        self.sendMessages([{'cmd': 'bye'}])
 
-    @classmethod
-    def broadcast(cls, message):
-        message['ts'] = int(1000*time.time())
-        history.message(message)
-        for chan in cls.channels.values():
-            chan.sendMessages([message])
+        for group in self.groups.keys():
+            Group.groups[group].leave(self)
+        del Channel.channels[session.uid]
 
     @classmethod
     def gc(cls):
@@ -169,8 +196,8 @@ class History:
     # So we do not login and logout images for user privacy.
     cmdFilter = []
 
-    def __init__(self):
-        self.buf = deque([], 10)
+    def __init__(self, size=HISTORY_SIZE):
+        self.buf = deque([], size)
         self.cmdFilter = ['say', 'me']
 
     def message(self, msg):
@@ -180,8 +207,8 @@ class History:
     def __iter__(self):
         return self.buf.__iter__()
 
-history = History()
 
+group = Group("test")
 
 ######################################################################
 #
@@ -192,34 +219,22 @@ class Login(Resource):
 
     def render_POST(self, request):
         session = request.getSession()
-        user = IUser(session)
-        name = request.args['name'][0].strip()
 
-        # logout old user if any
-        if user.name and user.name != name:
-            message = {
-                'cmd': 'leave',
-                'user': user.name
-            }
-            User.users[user.name] = None
-            Channel.broadcast(message)
+        nickname = request.args['name'][0].strip()
+        group = Group.groups.get(request.args['group'][0])
 
+        if group is None:
+            return json.dumps({'error': 'Group does not exist'})
+
+        # TODO logout old user if any
         # TODO: check if name is valid
-        user.name = name
 
-        roster = {'users': User.users.keys()}
+        roster = {'users': group.channels.keys()}
 
         chan = IChannel(session)
-        chan.setUser(user)
-        chan.sendMessages(list(history))
 
-        if user.name not in User.users:
-            message = {
-                'cmd': 'join',
-                'user': user.name
-            }
-            User.users[user.name] = user
-            Channel.broadcast(message)
+        if nickname not in group.channels:
+            group.join(chan, nickname)
 
         return json.dumps(roster)
 
@@ -238,7 +253,7 @@ class Logout(Resource):
                    'user': user.name
                    }
 
-        Channel.broadcast(message)
+        group.broadcast(message)
 
         del User.users[user.name]
 
@@ -250,21 +265,27 @@ class Post(Resource):
 
     def render_POST(self, request):
         session = request.getSession()
-        user = IUser(session)
+        chan = IChannel(session)
         msg = request.args.get('message', ['Error'])[0].strip()
-        if user.name:
+        group = Group.groups.get(request.args.get('group', [None])[0])
+
+        if group is None:
+            return "Error: group not found"
+
+        nickname = chan.groups.get(group.name)
+        if nickname:
             if msg.startswith("/me "):
                 message = {'cmd': 'me',
-                           'user': user.name,
+                           'user': nickname,
                            'message': msg[4:]
                            }
             else:
                 message = {'cmd': 'say',
-                           'user': user.name,
+                           'user': nickname,
                            'message': msg
                            }
 
-            Channel.broadcast(message)
+            group.broadcast(message)
             return "OK"
         else:
             request.setResponseCode(403)
@@ -273,6 +294,9 @@ class Post(Resource):
 
 class Poll(Resource):
     isLeaf = True
+
+    def render_GET(self, request):
+        return ''
 
     def render_POST(self, request):
         chan = IChannel(request.getSession())
@@ -284,6 +308,10 @@ class Poll(Resource):
 #
 # Setup site
 #
+
+# Create test group
+Group('test')
+
 
 root = static.File("static/")
 
