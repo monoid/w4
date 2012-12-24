@@ -41,12 +41,19 @@ class Group:
             if self.subject:
                 hist += [{'cmd': 'subject', 'message': self.subject}]
             chan.sendMessages(hist)
-            # Leave group if the channel have been logged before
+
+            # Leave group if the channel have been logged before with
+            # different names
             if self.name in chan.groups:
-                self.leave(chan)
+                if chan.groups[self.name] != nickname:
+                    self.leave(chan)
+                else:
+                    # Just return, as this is returning user
+                    return True
 
             self.channels[nickname] = chan
             chan.groups[self.name] = nickname
+            
             self.broadcast({
                 'cmd': 'join',
                 'user': nickname
@@ -237,8 +244,7 @@ class Login(Resource):
 
         chan = IChannel(session)
 
-        if nickname not in group.channels:
-            group.join(chan, nickname)
+        group.join(chan, nickname)
 
         return json.dumps(roster)
 
