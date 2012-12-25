@@ -2,13 +2,17 @@ from twisted.python.components import registerAdapter
 from twisted.web import static, server
 from twisted.web.http import Request, HTTPChannel, HTTPFactory
 from twisted.web.resource import Resource
+from twisted.words.protocols.jabber.xmpp_stringprep import resourceprep
 from zope.interface import Interface, Attribute, implements
 
 from collections import deque
 
 import json
+import re
 import time
 import weakref
+
+VALID_NICK = re.compile(r'^\S.*\S$', re.UNICODE)
 
 SESSION_TIMEOUT=300 # Ten minutes
 POLL_TIMEOUT=120-0.2    # Almost two minutes
@@ -231,14 +235,24 @@ class Login(Resource):
     def render_POST(self, request):
         session = request.getSession()
 
-        nickname = request.args['name'][0].strip()
+        nickname = request.args['name'][0]
         group = Group.groups.get(request.args['group'][0])
 
         if group is None:
             return json.dumps({'error': 'Group does not exist'})
 
-        # TODO logout old user if any
-        # TODO: check if name is valid
+        # check if name is valid
+        valid = True
+        try:
+            nickname = resourceprep.prepare(nickname.decode('utf-8'))
+            if not VALID_NICK.match(nickname):
+                valid = False
+            if len(nickname) > 18:
+                valid = False
+        except:
+            valid = False
+        if not valid:
+            return json.dumps([{'cmd': 'error', 'message': u"Invalid nickname '%s'" % (nickname,)}])
 
         roster = {'users': group.channels.keys()}
 
