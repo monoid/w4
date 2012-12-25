@@ -36,7 +36,7 @@ class Group:
         self.name = name
         self.channels = weakref.WeakValueDictionary()
         self.history = History()
-        # TODO check if group exists
+
         Group.groups[name] = self
 
     def join(self, chan, nickname):
