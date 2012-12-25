@@ -267,17 +267,9 @@ class Logout(Resource):
     def render_POST(self, request):
         session = request.getSession()
         chan = IChannel(session)
-        user = IUser(session)
+
         chan.close()
         session.expire()
-
-        message = {'cmd': 'leave',
-                   'user': user.name
-                   }
-
-        group.broadcast(message)
-
-        del User.users[user.name]
 
         return 'OK'
 
