@@ -223,8 +223,6 @@ class History:
         return self.buf.__iter__()
 
 
-group = Group("test")
-
 ######################################################################
 #
 # Pages
