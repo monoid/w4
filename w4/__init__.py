@@ -98,7 +98,7 @@ class IUser(Interface):
 class User():
     implements(IUser)
 
-    def __init__(self, session):
+    def __init__(self, _):
         self.name = None
 
 User.users = {}
@@ -152,7 +152,7 @@ class Channel:
     def setUser(self, user):
         self.user = user
 
-    def _finishCb(self, ignore, chan):
+    def _finishCb(self, _, chan):
         if self.poll == chan: # Precaution left from old version...
             self.poll = None
 
