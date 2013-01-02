@@ -7,8 +7,35 @@ function datefmt(ts) {
     return h+':'+m;
 }
 
+var InputWin = Backbone.View.extend({
+    events: {
+        'click #sendbtn': 'sendMessage',
+        'keyup #inputline': 'checkEnter'
+    },
+    show: function () {
+        $("#inputline").attr('disabled', null);
+        $("#sendbtn").attr('disabled', null);
+        this.$el.show();
+    },
+    checkEnter: function (evt) {
+        if (evt.ctrlKey && (evt.keyCode == 13 || evt.keyCode == 10)) {
+            $('#sendbtn').click();
+        }
+    },
+    sendMessage: function () {
+        var msg = $("#inputline").val();
+        $.ajax({ url: '/ajax/post',
+                 data: { 'message': msg, 'group': this.options.group },
+                 type: 'POST'
+               });
+        $("#inputline").val('').focus();
+    }
+});
+
 var ChatWindow = Backbone.View.extend({
-    el: $('#chat'),
+    show: function () {
+            this.$el.show();
+    },
     message: function (obj) {
         var ts = new Date(obj.ts)
         var msg = $('<div>')
@@ -51,7 +78,7 @@ var ChatWindow = Backbone.View.extend({
         case 'subject':
             msg.append($('<span class="subject">').text("Subject: "+obj.message));
         }
-        msg.appendTo(this.el);
+        msg.appendTo(this.$el);
     }
 });
 
@@ -61,11 +88,11 @@ var LoginWindow = Backbone.View.extend({
         'click #loginbtn': 'login'
     },
     
-    login: function (username, group) {
+    login: function () {
         var username = $('#username').val().trim();
         if (username) {
             $.ajax({ url: '/ajax/login',
-                     data: { 'name': username, group },
+                     data: { 'name': username, group: this.options.group },
                      dataType: 'json',
                      type: 'POST',
                      success: function (data) {
@@ -79,34 +106,13 @@ var LoginWindow = Backbone.View.extend({
                    });
             this.$el.hide();
 
-            $("#inputline").attr('disabled', null);
-            $("#sendbtn").attr('disabled', null);
-
-            $("#chat").show();
-            $("#input").show();
-
-            $("#sendbtn").click(function () {
-                say($("#inputline").val(), 'test');
-                $("#inputline").val('').focus();
-            });
-
-            $('#inputline').keyup(function (evt) {
-                if (evt.ctrlKey && (evt.keyCode == 13 || evt.keyCode == 10)) {
-                    $('#sendbtn').click();
-                }
-            });
+            this.options.chatwin.show();
+            this.options.inputwin.show();
         }
 
     }
 });
 
-
-function say(msg, group) {
-    $.ajax({ url: '/ajax/post',
-             data: { 'message': msg, 'group': group },
-             type: 'POST'
-           });
-}   
 
 (function poll(){
     $.ajax({ url: "/ajax/poll", success: function(data){
@@ -127,8 +133,13 @@ function say(msg, group) {
 
 var chatwin;
 var login;
+var inputwin;
 
 $(document).ready(function () {
-    chatwin = new ChatWindow();
-    login = new LoginWindow();
+    chatwin = new ChatWindow({el: '#chat', group: 'test'});
+    inputwin = new InputWin({el: '#input', group: 'test'});
+    login = new LoginWindow({el: '#login',
+                             chatwin: chatwin,
+                             inputwin: inputwin,
+                             group: 'test'});
 });
