@@ -1,6 +1,5 @@
 from twisted.python.components import registerAdapter
 from twisted.web import static, server
-from twisted.web.http import Request, HTTPChannel, HTTPFactory
 from twisted.web.resource import Resource
 from twisted.words.protocols.jabber.xmpp_stringprep import resourceprep
 from zope.interface import Interface, Attribute, implements
@@ -14,11 +13,12 @@ import weakref
 
 VALID_NICK = re.compile(r'^\S.*\S$', re.UNICODE)
 
-SESSION_TIMEOUT=300 # Ten minutes
-POLL_TIMEOUT=120-0.2    # Almost two minutes
-GC_PERIOD=10        # Half minute
+SESSION_TIMEOUT = 300     # Ten minutes
+POLL_TIMEOUT = 120-0.2    # Almost two minutes
+GC_PERIOD = 10            # Half minute
 
-HISTORY_SIZE=10
+HISTORY_SIZE = 10
+
 
 # TODO: group should have an ACL.  Even public group has an ACL where
 # its owners are listed.
@@ -57,7 +57,7 @@ class Group:
 
             self.channels[nickname] = chan
             chan.groups[self.name] = nickname
-            
+
             self.broadcast({
                 'cmd': 'join',
                 'user': nickname
@@ -95,13 +95,15 @@ class IUser(Interface):
     # TODO: id
     name = Attribute("User name")
 
+
 class User():
     implements(IUser)
 
+    # Class attribute
+    users = {}
+
     def __init__(self, _):
         self.name = None
-
-User.users = {}
 
 registerAdapter(User, server.Session, IUser)
 
@@ -113,7 +115,8 @@ class IChannel(Interface):
     groups = Attribute("Dict of channel's group by name.")
     ts = Attribute("Poll's timestamp")
     to = Attribute("Poll's timeout")
-    
+
+
 class Channel:
     implements(IChannel)
     messages = None
@@ -124,16 +127,19 @@ class Channel:
     ts = None
     to = POLL_TIMEOUT
 
-    channels = {} # Class attribute
+    # Class attribute
+    channels = {}
 
     def __init__(self, session):
-        self.messages = [{'cmd': 'ping'}] # Force request completion
-                                          # to set session cookie.
+        self.messages = [{'cmd': 'ping'}]  # Force request completion
+                                           # to set session cookie.
         self.groups = {}
         Channel.channels[session.uid] = self
         self.uid = session.uid
+
         def onExpire():
             self.close(session)
+
         session.notifyOnExpire(onExpire)
         session.sessionTimeout = SESSION_TIMEOUT
 
@@ -153,7 +159,7 @@ class Channel:
         self.user = user
 
     def _finishCb(self, _, chan):
-        if self.poll == chan: # Precaution left from old version...
+        if self.poll == chan:  # Precaution left from old version...
             self.poll = None
 
     def sendMessages(self, messages):
@@ -165,24 +171,27 @@ class Channel:
         if self.poll is not None:
             self.poll.setHeader('Content-type', 'application/json')
             self.poll.setHeader('Pragma', 'no-cache')
-            self.poll.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
+            self.poll.setHeader(
+                'Cache-Control',
+                'no-store, no-cache, must-revalidate, max-age=0')
             json.dump(self.messages, self.poll)
             self.poll.finish()
             self.poll = None
             self.ts = None
-            self.messages = [] # TODO do not clear messages before
+            self.messages = []  # TODO do not clear messages before
             # poll has finished with success.  We
             # may need them to resend.  Or we
             # should store them elsewhere...
-            
+
     def error(self, error):
         self.sendMessages([{
             'cmd': 'error',
             'message': error
         }])
+
     def flush(self):
         self.sendMessages([])
-        
+
     def close(self, session):
         self.sendMessages([{'cmd': 'bye'}])
 
@@ -250,7 +259,10 @@ class Login(Resource):
         except:
             valid = False
         if not valid:
-            return json.dumps([{'cmd': 'error', 'message': u"Invalid nickname '%s'" % (nickname,)}])
+            return json.dumps([{
+                'cmd': 'error',
+                'message': u"Invalid nickname '%s'" % (nickname,)
+            }])
 
         roster = {'users': group.channels.keys()}
 
