@@ -310,7 +310,6 @@ class Logout(Resource):
         session = request.getSession()
         chan = IChannel(session)
 
-        chan.close()
         session.expire()
 
         return 'OK'
