@@ -44,7 +44,10 @@ class Group:
         if self.public:
             hist = list(self.history)
             if self.subject:
-                hist += [{'cmd': 'subject', 'message': self.subject}]
+                hist += [{'cmd': 'subject',
+                          'group': self.group,
+                          'message': self.subject
+                }]
             chan.sendMessages(hist)
 
             # Leave group if the channel have been logged before with
@@ -66,7 +69,7 @@ class Group:
             return True
         else:
             # TODO: check ACL
-            chan.error('Access denied', self)
+            chan.error('Access denied', self, group=self.name)
             return False
 
     def leave(self, chan):
@@ -85,6 +88,7 @@ class Group:
 
     def broadcast(self, message):
         message['ts'] = int(1000*time.time())
+        message['group'] = self.name
         self.history.message(message)
         for chan in self.channels.values():
             chan.sendMessages([message])
@@ -194,9 +198,10 @@ class Channel:
             # may need them to resend.  Or we
             # should store them elsewhere...
 
-    def error(self, error):
+    def error(self, error, group=None):
         self.sendMessages([{
             'cmd': 'error',
+            'group': group,
             'message': error
         }])
 
@@ -263,6 +268,7 @@ class Login(Resource):
         if group is None:
             return json.dumps([{
                 'cmd':'error',
+                'group': group,
                 'message': 'Group does not exist'
             }])
 
@@ -279,6 +285,7 @@ class Login(Resource):
         if not valid:
             return json.dumps([{
                 'cmd': 'error',
+                'group': group,
                 'message': u"Invalid nickname '%s'" % (nickname,)
             }])
 
