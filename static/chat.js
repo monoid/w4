@@ -1,7 +1,7 @@
 var TIMEOUT = 180000; // 3 minutes
 var ERR_TIMEOUT = 60000; // 1 minute
 
-function datefmt(ts) {
+function hourfmt(ts) {
     var h = ('0'+ts.getHours()).slice(-2);
     var m = ('0'+ts.getMinutes()).slice(-2);
     return h+':'+m;
@@ -40,7 +40,7 @@ var ChatWindow = Backbone.View.extend({
         var ts = new Date(obj.ts)
         var msg = $('<div>')
         if (obj.cmd != 'subject') {
-            msg.append($('<span class="ts">').text('['+datefmt(ts)+'] '));
+            msg.append($('<span class="ts">').text('['+hourfmt(ts)+'] '));
         }
         switch (obj.cmd) {
         case 'say':
