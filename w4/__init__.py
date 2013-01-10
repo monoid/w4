@@ -1,4 +1,5 @@
 from twisted.python.components import registerAdapter
+from twisted.python import log
 from twisted.web import static, server
 from twisted.web.resource import Resource
 from twisted.words.protocols.jabber.xmpp_stringprep import resourceprep
@@ -210,8 +211,12 @@ class Channel:
 
     @staticmethod
     def runGc(reactor):
-        Channel.gc()
-        reactor.callLater(GC_PERIOD, Channel.runGc, reactor)
+        try:
+            Channel.gc()
+        except:
+            log.err()
+        finally:
+            reactor.callLater(GC_PERIOD, Channel.runGc, reactor)
 
 registerAdapter(Channel, server.Session, IChannel)
 
