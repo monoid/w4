@@ -152,7 +152,7 @@ class Channel:
             poll.setHeader('Content-type', 'application/json')
             json.dump([{
                 'cmd': 'error',
-                'type': 'duplicate-pall',
+                'type': 'duplicate-poll',
                 'message': "It seems you opened chat in multiple windows..."
             }], poll)
             poll.finish()
