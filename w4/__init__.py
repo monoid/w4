@@ -148,7 +148,15 @@ class Channel:
 
     def setPoll(self, poll):
         if self.poll:
-            self.poll.finish()
+            poll.setResponseCode(403) # TODO
+            poll.setHeader('Content-type', 'application/json')
+            json.dump([{
+                'cmd': 'error',
+                'type': 'duplicate-pall',
+                'msg': "It seems you opened chat in multiple windows..."
+            }], poll)
+            poll.finish()
+            return
 
         self.poll = poll
         self.ts = time.time()
