@@ -153,7 +153,7 @@ class Channel:
             json.dump([{
                 'cmd': 'error',
                 'type': 'duplicate-pall',
-                'msg': "It seems you opened chat in multiple windows..."
+                'message': "It seems you opened chat in multiple windows..."
             }], poll)
             poll.finish()
             return
@@ -261,7 +261,10 @@ class Login(Resource):
         group = Group.groups.get(request.args['group'][0])
 
         if group is None:
-            return json.dumps({'error': 'Group does not exist'})
+            return json.dumps([{
+                'cmd':'error',
+                'message': 'Group does not exist'
+            }])
 
         # check if name is valid
         valid = True
