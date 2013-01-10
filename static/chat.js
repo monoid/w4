@@ -87,6 +87,11 @@ var ChatWindow = Backbone.View.extend({
             msg.append($('<span class="error">').text("Error: "+obj.message));
             this.options.inputwin.disable();
             break;
+
+        case 'bye':
+            msg.append($('<span class="bye error">').text("Bye-bye."));
+            this.options.inputwin.disable();
+            break;
         }
         msg.appendTo(this.$el);
     }
@@ -115,7 +120,7 @@ var LoginWindow = Backbone.View.extend({
                      }
                    });
             this.$el.hide();
-
+            this.options.logoutwin.show();
             this.options.chatwin.show();
             this.options.inputwin.show();
         }
@@ -123,22 +128,44 @@ var LoginWindow = Backbone.View.extend({
     }
 });
 
+var LogoutWindow = Backbone.View.extend({
+    events: {
+        'click #logoutbtn': 'logout'
+    },
 
-(function poll(){
-    $.ajax({ url: "/ajax/poll", success: function(data){
+    show: function () {
+        this.$el.show();
+        this.$("#logoutbtn").attr('disabled', null);
+    },
+    logout: function () {
+        this.options.inputwin.disable();
+        $.ajax({
+            url: '/ajax/logout',
+            type: 'POST',
+            success: function () {
+                aj.abort();
+                location.href = '.';
+            }
+        });
+    }
+});
+
+var aj;
+function poll(){
+    aj = $.ajax({ url: "/ajax/poll", success: function(data){
         for (var i in data) {
             chatwin.message(data[i]);
         }
         poll();
     }, dataType: "json",
-             timeout: TIMEOUT,
-             type: 'POST',
-             error: function () {
-                 // TODO inform user
-                 setTimeout(poll, ERR_TIMEOUT);
-             }
-           });
-})();
+       timeout: TIMEOUT,
+       type: 'POST',
+       error: function () {
+           // TODO inform user
+           setTimeout(poll, ERR_TIMEOUT);
+       }
+    });
+}
 
 
 var chatwin;
@@ -152,8 +179,16 @@ $(document).ready(function () {
         group: 'test',
         inputwin: inputwin
     });
-    login = new LoginWindow({el: '#login',
-                             chatwin: chatwin,
-                             inputwin: inputwin,
-                             group: 'test'});
+    var logoutwin = new LogoutWindow({
+        el: '#logout',
+        inputwin: inputwin
+    });
+    login = new LoginWindow({
+        el: '#login',
+        chatwin: chatwin,
+        inputwin: inputwin,
+        logoutwin: logoutwin,
+        group: 'test'
+    });
+    poll();
 });
