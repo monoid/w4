@@ -17,6 +17,10 @@ var InputWin = Backbone.View.extend({
         $("#sendbtn").attr('disabled', null);
         this.$el.show();
     },
+    disable: function () {
+        $("#inputline").attr('disabled', 'disabled');
+        $("#sendbtn").attr('disabled', 'disabled');
+    },
     checkEnter: function (evt) {
         if (evt.ctrlKey && (evt.keyCode == 13 || evt.keyCode == 10)) {
             $('#sendbtn').click();
@@ -39,7 +43,7 @@ var ChatWindow = Backbone.View.extend({
     message: function (obj) {
         var ts = new Date(obj.ts)
         var msg = $('<div>')
-        if (obj.cmd != 'subject') {
+        if (obj.cmd != 'subject' && obj.cmd != 'error') {
             msg.append($('<span class="ts">').text('['+hourfmt(ts)+'] '));
         }
         switch (obj.cmd) {
@@ -77,6 +81,12 @@ var ChatWindow = Backbone.View.extend({
 
         case 'subject':
             msg.append($('<span class="subject">').text("Subject: "+obj.message));
+            break;
+
+        case 'error':
+            msg.append($('<span class="error">').text("Error: "+obj.message));
+            this.options.inputwin.disable();
+            break;
         }
         msg.appendTo(this.$el);
     }
@@ -136,8 +146,12 @@ var login;
 var inputwin;
 
 $(document).ready(function () {
-    chatwin = new ChatWindow({el: '#chat', group: 'test'});
     inputwin = new InputWin({el: '#input', group: 'test'});
+    chatwin = new ChatWindow({
+        el: '#chat',
+        group: 'test',
+        inputwin: inputwin
+    });
     login = new LoginWindow({el: '#login',
                              chatwin: chatwin,
                              inputwin: inputwin,
