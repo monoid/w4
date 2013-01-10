@@ -137,6 +137,8 @@ class Channel:
         Channel.channels[session.uid] = self
         self.uid = session.uid
 
+        self.ts = time.time()
+
         def onExpire():
             self.close(session)
 
