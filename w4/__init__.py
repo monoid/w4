@@ -50,14 +50,19 @@ class Group:
                 }]
             chan.sendMessages(hist)
 
+            if nickname in self.channels:
+                if self.channels[nickname] == chan:
+                    # returning user with same nickname.
+                    return True
+                else:
+                    chan.error("Nickname exists.", group=self.name)
+                    return False
+
             # Leave group if the channel have been logged before with
             # different names
             if self.name in chan.groups:
                 if chan.groups[self.name] != nickname:
                     self.leave(chan)
-                else:
-                    # Just return, as this is returning user
-                    return True
 
             self.channels[nickname] = chan
             chan.groups[self.name] = nickname
