@@ -45,7 +45,7 @@ class Group:
             hist = list(self.history)
             if self.subject:
                 hist += [{'cmd': 'subject',
-                          'group': self.group,
+                          'group': self.name,
                           'message': self.subject
                 }]
             chan.sendMessages(hist)
