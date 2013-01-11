@@ -100,7 +100,7 @@ class Group:
             chan.sendMessages([message])
 
     def __getinitargs__(self):
-        return (self.name,)
+        return self.name,
 
     def __getstate__(self):
         return {
@@ -267,7 +267,7 @@ class History:
     # So we do not login and logout images for user privacy.
     cmdFilter = []
 
-    def __init__(self, size=HISTORY_SIZE, hist=[]):
+    def __init__(self, size=HISTORY_SIZE, hist=()):
         self.buf = deque(hist, size)
         self.cmdFilter = ['say', 'me']
 
@@ -330,10 +330,7 @@ class Logout(Resource):
 
     def render_POST(self, request):
         session = request.getSession()
-        chan = IChannel(session)
-
         session.expire()
-
         return 'OK'
 
 
