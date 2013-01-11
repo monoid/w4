@@ -1,3 +1,4 @@
+from twisted.application import service
 from twisted.python.components import registerAdapter
 from twisted.python import log
 from twisted.web import static, server
@@ -97,6 +98,36 @@ class Group:
         self.history.message(message)
         for chan in self.channels.values():
             chan.sendMessages([message])
+
+    def __getinitargs__(self):
+        return (self.name,)
+
+    def __getstate__(self):
+        return {
+            'name': self.name,
+            'public': self.public,
+            'history_len': self.history.buf.maxlen,
+            'history': list(self.history),
+            'subject': self.subject
+        }
+
+    def __setstate__(self, state):
+        self.name = state['name']
+        self.public = state['public']
+        self.history = History(size=state['history_len'], hist=state['history'])
+        self.subject = state['subject']
+
+    @classmethod
+    def saveGroups(cls, outf):
+        import pickle
+        pickle.dump(cls.groups.values(), outf)
+
+    @classmethod
+    def loadGroups(cls, inf):
+        import pickle
+        groups = pickle.load(inf)
+        for group in groups:
+            cls.groups[group.name] = group
 
 
 ######################################################################
@@ -245,8 +276,8 @@ class History:
     # So we do not login and logout images for user privacy.
     cmdFilter = []
 
-    def __init__(self, size=HISTORY_SIZE):
-        self.buf = deque([], size)
+    def __init__(self, size=HISTORY_SIZE, hist=[]):
+        self.buf = deque(hist, size)
         self.cmdFilter = ['say', 'me']
 
     def message(self, msg):
@@ -358,6 +389,32 @@ class Poll(Resource):
         chan.setPoll(request)
         return server.NOT_DONE_YET
 
+
+
+
+class W4Service(service.Service):
+    """ Service for loading and story history
+    """
+    histfile = None
+    def __init__(self, histfile):
+        self.histfile = histfile
+
+    def startService(self):
+        service.Service.startService(self)
+        # try to load history
+        try:
+            with open(self.histfile, "rb") as inf:
+                Group.loadGroups(inf)
+        except IOError:
+            pass
+
+    def stopService(self):
+        service.Service.stopService(self)
+        try:
+            with open(self.histfile, "wb") as outf:
+                Group.saveGroups(outf)
+        except IOError:
+            log.err()
 
 ######################################################################
 #
