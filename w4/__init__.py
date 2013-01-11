@@ -106,7 +106,6 @@ class Group:
         return {
             'name': self.name,
             'public': self.public,
-            'history_len': self.history.buf.maxlen,
             'history': list(self.history),
             'subject': self.subject
         }
@@ -114,7 +113,7 @@ class Group:
     def __setstate__(self, state):
         self.name = state['name']
         self.public = state['public']
-        self.history = History(size=state['history_len'], hist=state['history'])
+        self.history = History(hist=state['history'])
         self.subject = state['subject']
 
     @classmethod
