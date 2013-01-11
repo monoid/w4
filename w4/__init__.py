@@ -1,4 +1,4 @@
-from twisted.application import service
+from twisted.application import service, internet
 from twisted.python.components import registerAdapter
 from twisted.python import log
 from twisted.web import static, server
@@ -258,15 +258,6 @@ class Channel:
             if (channel.ts is not None) and (channel.ts + channel.to <= ts):
                 channel.flush()
 
-    @staticmethod
-    def runGc(reactor):
-        try:
-            Channel.gc()
-        except:
-            log.err()
-        finally:
-            reactor.callLater(GC_PERIOD, Channel.runGc, reactor)
-
 registerAdapter(Channel, server.Session, IChannel)
 
 
@@ -392,10 +383,11 @@ class Poll(Resource):
 
 
 
-class W4Service(service.Service):
-    """ Service for loading and story history
+class W4HistService(service.Service):
+    """ Service for loading and story history on start and stop.
     """
     histfile = None
+
     def __init__(self, histfile):
         self.histfile = histfile
 
@@ -415,6 +407,46 @@ class W4Service(service.Service):
                 Group.saveGroups(outf)
         except IOError:
             log.err()
+
+
+AUTOSAVE_PERIOD = 10*60  # 10 minutes
+
+class W4AutosaveService(internet.TimerService):
+    """ Service for periodic storing history.
+    """
+    def __init__(self, histfile, interval=AUTOSAVE_PERIOD):
+        internet.TimerService.__init__(self, interval, self._saveHist)
+        self.histfile = histfile
+
+    def _saveHist(self):
+        try:
+            with open(self.histfile, "wb") as outf:
+                Group.saveGroups(outf)
+        except IOError:
+            log.err()
+
+class W4ChanGcService(internet.TimerService):
+    """ Service for gc'ing channels.
+    """
+    def __init__(self, interval=GC_PERIOD):
+        internet.TimerService.__init__(self, interval, self._chanGc)
+
+    def _chanGc(self):
+        Channel.gc()
+
+class W4Service(service.MultiService):
+    def __init__(self, histfile):
+        service.MultiService.__init__(self)
+
+
+        exitsave = W4HistService(histfile)
+        exitsave.setServiceParent(self)
+
+        autosave = W4AutosaveService(histfile)
+        autosave.setServiceParent(self)
+
+        changc = W4ChanGcService()
+        changc.setServiceParent(self)
 
 ######################################################################
 #
