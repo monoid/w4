@@ -3,7 +3,7 @@
     width: 79%;
     border: 2px solid black;
     border-radius: 5px;
-    background: #fee;
+    background: #fff4f4;
     font-family: Arial, san-serif;
     min-height: 10em;
     padding: 0.5ex;
@@ -11,7 +11,7 @@
 }
 
 .ts {
-    color: red;
+    color: #C00;
 }
 
 .nick {
