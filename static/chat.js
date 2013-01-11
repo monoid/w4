@@ -37,11 +37,30 @@ var InputWin = Backbone.View.extend({
 });
 
 var ChatWindow = Backbone.View.extend({
+    prevTs: null,
     show: function () {
             this.$el.show();
     },
     message: function (obj) {
+        var dayChanged = !this.prevTs;
         var ts = new Date(obj.ts)
+
+        if (this.prevTs) {
+            if (ts.getDate() != this.prevTs.getDate()
+                || ts.getMonth() != this.prevTs.getMonth()
+                || ts.getFullYear() != this.prevTs.getFullYear()) {
+               dayChanged = true;
+            }
+        }
+
+        if (obj.ts) this.prevTs = ts;
+
+        if (dayChanged && obj.ts) {
+            var dt = $('<div>').addClass('daychange');
+            dt.html("&mdash; "+ts.toDateString()+" &mdash;");
+            dt.appendTo(this.$el);
+        }
+
         var msg = $('<div>')
         if (obj.cmd != 'subject' && obj.cmd != 'error') {
             msg.append($('<span class="ts">').text('['+hourfmt(ts)+'] '));

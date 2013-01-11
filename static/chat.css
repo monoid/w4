@@ -41,6 +41,12 @@
     color: brown;
 }
 
+.daychange {
+    text-align: center;
+    font-size: 80%;
+    color: #C00;
+}
+
 #login {
     position: absolute;
     top: 2px;
