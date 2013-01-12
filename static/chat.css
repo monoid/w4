@@ -69,7 +69,7 @@
 #roster {
     position: absolute; /* IE sux */
     position: fixed;
-    right: 0;
+    right: 1%;
     width: 18%;
     top: 10px;
     margin: 0;
@@ -82,6 +82,7 @@
     padding: 2px;
     min-height: 5em;
     background: #f8f8ff;
+    margin: 0 0 0.5em 0;
 }
 
 #roster-list li {
@@ -92,4 +93,8 @@
 
 #roster-list li:hover {
     background-color: #EEF;
+}
+
+#logout {
+    text-align: center;
 }
