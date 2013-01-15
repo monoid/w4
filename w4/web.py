@@ -1,3 +1,4 @@
+
 from twisted.application import internet
 from twisted.python.components import registerAdapter
 from twisted.web import static, server
@@ -44,7 +45,7 @@ class IChannel(Interface):
     to = Attribute("Poll's timeout")
 
 
-class Channel:
+class HTTPChannel:
     implements(IChannel)
     messages = None
     poll = None
@@ -61,7 +62,7 @@ class Channel:
         self.messages = [{'cmd': 'ping'}]  # Force request completion
                                            # to set session cookie.
         self.groups = {}
-        Channel.channels[session.uid] = self
+        HTTPChannel.channels[session.uid] = self
         self.uid = session.uid
 
         self.ts = time.time()
@@ -135,7 +136,7 @@ class Channel:
 
         for group in self.groups.keys():
             Group.groups[group].leave(self)
-        del Channel.channels[session.uid]
+        del HTTPChannel.channels[session.uid]
 
     @classmethod
     def gc(cls):
@@ -144,7 +145,7 @@ class Channel:
             if (channel.ts is not None) and (channel.ts + channel.to <= ts):
                 channel.flush()
 
-registerAdapter(Channel, server.Session, IChannel)
+registerAdapter(HTTPChannel, server.Session, IChannel)
 
 
 
@@ -254,7 +255,7 @@ class W4ChanGcService(internet.TimerService):
         internet.TimerService.__init__(self, interval, self._chanGc)
 
     def _chanGc(self):
-        Channel.gc()
+        HTTPChannel.gc()
 
 ######################################################################
 #

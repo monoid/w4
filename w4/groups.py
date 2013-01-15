@@ -1,6 +1,5 @@
 from collections import deque
 import time
-import weakref
 
 HISTORY_SIZE = 10
 
@@ -42,7 +41,7 @@ class Group:
 
     def __init__(self, name):
         self.name = name
-        self.channels = weakref.WeakValueDictionary()
+        self.channels = {}
         self.history = History()
 
         Group.groups[name] = self
