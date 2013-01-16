@@ -210,7 +210,7 @@ class Post(Resource):
     def render_POST(self, request):
         session = request.getSession()
         chan = IChannel(session)
-        msg = request.args.get('message', ['Error'])[0].strip()
+        msg = request.args.get('message', ['Error'])[0].decode('utf-8').strip()
         group = Group.groups.get(request.args.get('group', [None])[0])
 
         if group is None:
