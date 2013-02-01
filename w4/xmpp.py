@@ -132,7 +132,7 @@ class PresenceHandler(xmppim.PresenceProtocol):
         # Send history if user needs it.
         for msg in gr.history:
             reply = muc.GroupChat(presence.sender,
-                jid.JID(tuple=(group, presence.recipient.host, nick)),
+                jid.JID(tuple=(group, presence.recipient.host, msg['user'])),
                 body=unicode(msg['message']))
 
             ts = datetime.fromtimestamp(int(msg['ts']/1000)).isoformat() # TODO: Z
