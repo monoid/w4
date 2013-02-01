@@ -21,6 +21,22 @@ def resolveGroup(frm):
     return (group, nick)
 
 
+class OurUserPresence(muc.UserPresence):
+    """ Our UserPresence implmentation with correct toElement method.
+    """
+
+
+    def toElement(self):
+        element = muc.UserPresence.toElement(self)
+        emuc = element.addElement((muc.NS_MUC_USER, 'x'))
+        item = emuc.addElement((muc.NS_MUC_USER, 'item'))
+        item['affiliation'] = self.affiliation
+        item['role'] = self.role
+        for s in self.mucStatuses:
+            emuc.addElement((muc.NS_MUC_USER, 'status'))['code'] = str(s)
+        return element
+
+
 class XMPPChannel():
     jid = None
     groups = None
@@ -41,11 +57,39 @@ class XMPPChannel():
             return
 
         for m in msgs:
-            if m['cmd'] == 'say':
+            cmd = m['cmd']
+
+            if cmd == 'say':
                 gr = Group.groups.get(m['group'])
                 reply = muc.GroupChat(self.jid, jid.JID("%s@ibhome.mesemb.ru/%s" % (gr.name, m['user'])),
                     body=unicode(m['message']))
                 self.comp.send(reply.toElement())
+            elif cmd == 'me':
+                gr = Group.groups.get(m['group'])
+                reply = muc.GroupChat(self.jid, jid.JID("%s@ibhome.mesemb.ru/%s" % (gr.name, m['user'])),
+                    body=unicode(u'/me '+m['message']))
+                self.comp.send(reply.toElement())
+            elif cmd == 'join':
+                gr = Group.groups.get(m['group'])
+                reply = OurUserPresence(recipient=self.jid,
+                    sender=jid.JID("%s@ibhome.mesemb.ru/%s" % (gr.name, m['user'])),
+                    available=True)
+                reply.role='participant'
+                reply.affiliation='member'
+                self.comp.send(reply.toElement())
+            elif cmd == 'leave':
+                gr = Group.groups.get(m['group'])
+                reply = OurUserPresence(recipient=self.jid,
+                    sender=jid.JID("%s@ibhome.mesemb.ru/%s" % (gr.name, m['user'])),
+                    available=False)
+                if self.getJid() in gr.jids:
+                    if self.groups.get(gr.name) == m['user']:
+                        reply.mucStatuses.add(110)
+                reply.role = 'none'
+                reply.affiliation = 'member'
+                self.comp.send(reply.toElement())
+
+
 
     def error(self, error, group=None):
         pass
@@ -184,7 +228,7 @@ class ChatHandler(xmppim.MessageProtocol):
 
     def getDiscoInfo(self, req, target, ni):
         group, nick = resolveGroup(target)
-        if group in Group.groups and not ni:
+        if group in Group.groups and not ni and not nick:
             gr = Group.groups[group]
             di = disco.DiscoInfo()
             di.append(disco.DiscoIdentity(u'conference', u'text', name=gr.name))
