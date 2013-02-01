@@ -33,6 +33,7 @@ class Group:
     name = None
     public = True
     channels = None
+    jids = None
     history = None
     subject = None
 
@@ -42,6 +43,7 @@ class Group:
     def __init__(self, name):
         self.name = name
         self.channels = {}
+        self.jids = {}
         self.history = History()
 
         Group.groups[name] = self
@@ -72,6 +74,9 @@ class Group:
 
             self.channels[nickname] = chan
             chan.groups[self.name] = nickname
+            jid = chan.getJid()
+            if jid:
+                self.jids[jid] = chan
 
             self.broadcast({
                 'cmd': 'join',
@@ -92,6 +97,8 @@ class Group:
             })
             del self.channels[nickname]
             del chan.groups[self.name]
+            if chan.getJid():
+                del self.jids[chan.getJid()]
             return True
         else:
             # TODO exception

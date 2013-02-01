@@ -33,6 +33,9 @@ class XMPPChannel():
         self.comp = comp
         self.complete = False
 
+    def getJid(self):
+        return self.jid.full()
+
     def sendMessages(self, msgs):
         if not self.complete:
             return
@@ -164,13 +167,20 @@ class ChatHandler(xmppim.MessageProtocol):
             return
 
         group, nick = resolveGroup(message.getAttribute('to'))
+
         gr = Group.groups.get(group)
-        gr.broadcast({
-            'cmd': 'say',
-            'user': nick or 'TODO',
-            'group': group,
-            'message': unicode(message.body)
-        })
+
+        frm = message.getAttribute('from')
+        if frm in gr.jids:
+            nick = gr.jids[frm].groups.get(group)
+            gr.broadcast({
+               'cmd': 'say',
+               'user': nick,
+               'message': unicode(message.body)
+            })
+        else:
+            # TODO Error: not member
+            pass
 
     def getDiscoInfo(self, req, target, ni):
         print "getDiscoInfo"

@@ -1,4 +1,3 @@
-
 from twisted.application import internet
 from twisted.python.components import registerAdapter
 from twisted.web import static, server
@@ -99,6 +98,9 @@ class HTTPChannel:
     def _finishCb(self, _, chan):
         if self.poll == chan:  # Precaution left from old version...
             self.poll = None
+
+    def getJid(self):
+        return None
 
     def sendMessages(self, messages):
         if len(self.messages) >= 100:
