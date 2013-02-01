@@ -183,13 +183,26 @@ class ChatHandler(xmppim.MessageProtocol):
             pass
 
     def getDiscoInfo(self, req, target, ni):
-        print "getDiscoInfo"
-        group, nick = resolveGroup(req)
-        return defer.succeed([])
+        group, nick = resolveGroup(target)
+        if group in Group.groups and not ni:
+            gr = Group.groups[group]
+            di = disco.DiscoInfo()
+            di.append(disco.DiscoIdentity(u'conference', u'text', name=gr.name))
+            return di
+        else:
+            # TODO
+            return []
 
     def getDiscoItems(self, req, target, ni):
-        print "getDiscoItems"
-        return defer.succeed([])
+        group, nick = resolveGroup(target)
+        if group is None:
+            # Return list of groups
+            items = [disco.DiscoItem(jid.JID(gr.name+"@ibhome.mesemb.ru"), name=gr.name)
+                    for gr in Group.groups.values()]
+            return items
+        else:
+            # TODO
+            return []
 
 
 #########################################################################
