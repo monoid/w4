@@ -5,6 +5,7 @@ from wokkel import component, disco, iwokkel, muc, server, xmppim
 from zope.interface import implements
 
 from .groups import Group
+from .ifaces import IChannel
 
 import re
 from datetime import datetime
@@ -36,6 +37,7 @@ class OurUserPresence(muc.UserPresence):
 
 
 class XMPPChannel():
+    implements(IChannel)
     jid = None
     groups = None
     comp = None

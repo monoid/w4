@@ -7,6 +7,7 @@ from zope.interface import Interface, Attribute, implements
 
 from .groups import Group
 from .xmpp import VALID_NICK
+from .ifaces import IChannel
 
 import json
 import time
@@ -33,15 +34,6 @@ class User():
         self.name = None
 
 registerAdapter(User, server.Session, IUser)
-
-
-class IChannel(Interface):
-    messages = Attribute("")
-    poll = Attribute("")
-    user = Attribute("")
-    groups = Attribute("Dict of channel's group by name.")
-    ts = Attribute("Poll's timestamp")
-    to = Attribute("Poll's timeout")
 
 
 class HTTPChannel:
