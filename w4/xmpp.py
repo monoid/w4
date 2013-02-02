@@ -1,5 +1,4 @@
 from twisted.application import strports
-from twisted.internet import defer
 from twisted.words.protocols.jabber import jid
 from twisted.words.xish import domish
 from wokkel import component, disco, iwokkel, muc, server, xmppim
@@ -18,13 +17,12 @@ def resolveGroup(frm):
     j = frm if isinstance(frm, jid.JID) else jid.JID(frm)
     group = j.user
     nick = j.resource
-    return (group, nick)
+    return group, nick
 
 
 class OurUserPresence(muc.UserPresence):
-    """ Our UserPresence implmentation with correct toElement method.
+    """ Our UserPresence implementation with correct toElement method.
     """
-
 
     def toElement(self):
         element = muc.UserPresence.toElement(self)
@@ -100,9 +98,6 @@ class XMPPChannel():
     def close(self):
         pass
 
-
-class DiscoHandler(disco.DiscoHandler):
-    pass
 
 class PresenceHandler(xmppim.PresenceProtocol):
     def availableReceived(self, presence):
