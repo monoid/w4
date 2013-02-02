@@ -98,7 +98,8 @@ class XMPPChannel():
         pass
 
     def close(self):
-        pass
+        for group in self.groups.keys():
+            Group.groups[group].leave(self)
 
 
 class PresenceHandler(xmppim.PresenceProtocol):
