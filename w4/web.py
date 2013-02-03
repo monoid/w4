@@ -89,9 +89,6 @@ class HTTPChannel(BaseChannel):
         if self.poll == chan:  # Precaution left from old version...
             self.poll = None
 
-    def getJidStr(self):
-        return None
-
     def sendMessages(self, messages):
         if len(self.messages) >= 100:
             self.messages = messages

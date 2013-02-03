@@ -50,16 +50,18 @@ class Group:
         Group.groups[name] = self
 
     def groupJid(self):
-        """ :returns JID
+        """ :rtype JID
         """
         return self.jid
 
     def userJid(self, nick):
-        """ :returns JID
+        """ :rtype JID
         """
         return JID(tuple=(self.jid.user, self.jid.host, nick))
 
     def users(self):
+        """ :rtype list
+        """
         return self.channels.keys()
 
     def join(self, chan, nickname):
@@ -169,6 +171,8 @@ class BaseChannel():
         return self.groups.get(group, None)
 
     def jidInGroup(self, group):
+        """ :rtype JID
+        """
         return self.groups[group].jid
 
     def close(self):
@@ -199,6 +203,7 @@ class MUCUser():
 
     def getJid(self):
         """ User's jid (group.name@host/nick).
+            :rtype JID
         """
         return self.jid
 

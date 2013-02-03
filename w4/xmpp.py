@@ -15,6 +15,9 @@ LOG=True
 VALID_NICK = re.compile(r'^\S.*\S$', re.UNICODE)
 
 def resolveGroup(frm):
+    """
+    :rtype : tuple
+    """
     j = frm if isinstance(frm, jid.JID) else jid.JID(frm)
     group = j.user
     nick = j.resource
@@ -26,6 +29,8 @@ class OurUserPresence(muc.UserPresence):
     """
 
     def toElement(self):
+        """ :rtype domish.Element
+        """
         element = muc.UserPresence.toElement(self)
         emuc = element.addElement((muc.NS_MUC_USER, 'x'))
         item = emuc.addElement((muc.NS_MUC_USER, 'item'))
@@ -59,6 +64,8 @@ class XMPPChannel(BaseChannel):
         XMPPChannel.jids[self.getJidStr()] = self
 
     def getJidStr(self):
+        """ :rtype unicode
+        """
         return self.jid.full()
 
     def sendMessages(self, msgs):
