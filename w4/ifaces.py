@@ -11,9 +11,12 @@ class IChannel(Interface):
     ts = Attribute("Poll's timestamp")
     to = Attribute("Poll's timeout")
 
-
     def getJid(self):
         """ Return user's original JID or None.
+        """
+
+    def getNick(self, group):
+        """ User's nick in the group, or None.
         """
 
     def sendMessages(self, messages):

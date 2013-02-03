@@ -1,3 +1,4 @@
+from twisted.words.protocols.jabber.jid import JID
 from collections import deque
 import time
 
@@ -33,20 +34,33 @@ class Group:
     name = None
     public = True
     channels = None
-    jids = None
     history = None
     subject = None
+    jid = None
 
     # Class attribute
     groups = {}
 
-    def __init__(self, name):
+    def __init__(self, name, host='ibhome.mesemb.ru'):
         self.name = name
         self.channels = {}
-        self.jids = {}
         self.history = History()
+        self.jid = JID(tuple=(self.name, host, None))
 
         Group.groups[name] = self
+
+    def groupJid(self):
+        """ :returns JID
+        """
+        return self.jid
+
+    def userJid(self, nick):
+        """ :returns JID
+        """
+        return JID(tuple=(self.jid.user, self.jid.host, nick))
+
+    def users(self):
+        return self.channels.keys()
 
     def join(self, chan, nickname):
         if self.public:
@@ -59,7 +73,7 @@ class Group:
             chan.sendMessages(hist)
 
             if nickname in self.channels:
-                if self.channels[nickname] == chan:
+                if self.channels[nickname].channel == chan:
                     # returning user with same nickname.
                     return True
                 else:
@@ -72,11 +86,7 @@ class Group:
                 if chan.groups[self.name] != nickname:
                     self.leave(chan)
 
-            self.channels[nickname] = chan
-            chan.groups[self.name] = nickname
-            jid = chan.getJid()
-            if jid:
-                self.jids[jid] = chan
+            chan.groups[self.name] = self.channels[nickname] = MUCUser(self, nickname, chan)
 
             self.broadcast({
                 'cmd': 'join',
@@ -97,8 +107,6 @@ class Group:
             })
             del self.channels[nickname]
             del chan.groups[self.name]
-            if chan.getJid():
-                del self.jids[chan.getJid()]
             return True
         else:
             # TODO exception
@@ -108,11 +116,11 @@ class Group:
         message['ts'] = int(1000*time.time())
         message['group'] = self.name
         self.history.message(message)
-        for chan in self.channels.values():
-            chan.sendMessages([message])
+        for usr in self.channels.values():
+            usr.channel.sendMessages([message])
 
     def __getinitargs__(self):
-        return self.name,
+        return self.name, self.jid.host
 
     def __getstate__(self):
         return {
@@ -129,6 +137,10 @@ class Group:
         self.subject = state['subject']
 
     @classmethod
+    def find(cls, groupname):
+        return cls.groups.get(groupname)
+
+    @classmethod
     def saveGroups(cls, outf):
         import pickle
         pickle.dump(cls.groups.values(), outf)
@@ -139,4 +151,54 @@ class Group:
         groups = pickle.load(inf)
         for group in groups:
             cls.groups[group.name] = group
+
+
+class BaseChannel():
+    """ Base implementation of channel with utility methods.
+    """
+
+    # Mapping of group name -> nick.
+    groups = None
+
+    def __init__(self):
+        self.groups = {}
+
+    def getNick(self, group):
+        if isinstance(group, Group):
+            group = group.name
+        return self.groups.get(group, None)
+
+    def jidInGroup(self, group):
+        return self.groups[group].jid
+
+    def close(self):
+        for group in self.groups.keys():
+            Group.find(group).leave(self)
+
+
+class MUCUser():
+    """ User in a MUC.
+    """
+
+    # Group user in
+    group = None
+    # User's nick in the group
+    nick = None
+    # User's channel (e.g. HTTPChannel or XMPPChannel)
+    channel = None
+    # User's jid (group.name@host/nick)
+    jid = None
+
+    def __init__(self, group, nick, channel):
+        self.group = group
+        self.nick = nick
+        self.channel = channel
+
+        gj = group.groupJid()
+        self.jid = JID(tuple=(gj.user, gj.host, nick))
+
+    def getJid(self):
+        """ User's jid (group.name@host/nick).
+        """
+        return self.jid
 

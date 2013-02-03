@@ -5,7 +5,7 @@ from twisted.web.resource import Resource
 from twisted.words.protocols.jabber.xmpp_stringprep import resourceprep
 from zope.interface import Interface, Attribute, implements
 
-from .groups import Group
+from .groups import Group, BaseChannel
 from .xmpp import VALID_NICK
 from .ifaces import IChannel
 
@@ -36,13 +36,11 @@ class User():
 registerAdapter(User, server.Session, IUser)
 
 
-class HTTPChannel:
+class HTTPChannel(BaseChannel):
     implements(IChannel)
     messages = None
     poll = None
     user = None
-    # Dict groupname -> nickname
-    groups = None
     ts = None
     to = POLL_TIMEOUT
 
@@ -50,16 +48,16 @@ class HTTPChannel:
     channels = {}
 
     def __init__(self, session):
+        BaseChannel.__init__(self)
         self.messages = [{'cmd': 'ping'}]  # Force request completion
                                            # to set session cookie.
-        self.groups = {}
         HTTPChannel.channels[session.uid] = self
         self.uid = session.uid
 
         self.ts = time.time()
 
         def onExpire():
-            self.close(session)
+            self.close()
 
         session.notifyOnExpire(onExpire)
         session.sessionTimeout = SESSION_TIMEOUT
@@ -91,7 +89,7 @@ class HTTPChannel:
         if self.poll == chan:  # Precaution left from old version...
             self.poll = None
 
-    def getJid(self):
+    def getJidStr(self):
         return None
 
     def sendMessages(self, messages):
@@ -125,12 +123,10 @@ class HTTPChannel:
     def flush(self):
         self.sendMessages([])
 
-    def close(self, session):
+    def close(self):
         self.sendMessages([{'cmd': 'bye'}])
-
-        for group in self.groups.keys():
-            Group.groups[group].leave(self)
-        del HTTPChannel.channels[session.uid]
+        BaseChannel.close(self)
+        del HTTPChannel.channels[self.uid]
 
     @classmethod
     def gc(cls):
@@ -154,7 +150,7 @@ class Login(Resource):
         session = request.getSession()
 
         nickname = request.args['name'][0]
-        group = Group.groups.get(request.args['group'][0])
+        group = Group.find(request.args['group'][0])
 
         if group is None:
             return json.dumps([{
@@ -180,7 +176,7 @@ class Login(Resource):
                 'message': u"Invalid nickname '%s'" % (nickname,)
             }])
 
-        roster = {'users': group.channels.keys()}
+        roster = {'users': group.users()}
 
         chan = IChannel(session)
 
@@ -205,12 +201,12 @@ class Post(Resource):
         session = request.getSession()
         chan = IChannel(session)
         msg = request.args.get('message', ['Error'])[0].decode('utf-8').strip()
-        group = Group.groups.get(request.args.get('group', [None])[0])
+        group = Group.find(request.args.get('group', [None])[0])
 
         if group is None:
             return "Error: group not found"
 
-        nickname = chan.groups.get(group.name)
+        nickname = chan.groups.get(group.name).nick
         if nickname:
             if msg.startswith("/me "):
                 message = {'cmd': 'me',
@@ -240,6 +236,7 @@ class Poll(Resource):
         chan = IChannel(request.getSession())
         chan.setPoll(request)
         return server.NOT_DONE_YET
+
 
 ###########################################################################
 class W4ChanGcService(internet.TimerService):
