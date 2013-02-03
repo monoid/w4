@@ -101,7 +101,7 @@ class Group:
             return False
 
     def leave(self, chan):
-        nickname = chan.groups[self.name]
+        nickname = chan.groups[self.name].nick
         if nickname in self.channels:
             self.broadcast({
                 'cmd': 'leave',
