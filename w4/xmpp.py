@@ -155,6 +155,13 @@ class PresenceHandler(xmppim.PresenceProtocol):
             ch = XMPPChannel.jids[presence.sender.full()]
         else:
             ch = XMPPChannel(presence.sender, self.parent)
+
+        if gr.name in ch.groups:
+            # We are already in the group, it just status changed to
+            # 'Away' or something like this.
+            # TODO broadcast status...
+            return
+
         gr.join(ch, nick)
 
         for un in users:
