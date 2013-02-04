@@ -12,7 +12,7 @@ from datetime import datetime
 
 LOG=True
 
-VALID_NICK = re.compile(r'^\S.*\S$', re.UNICODE)
+VALID_NICK = re.compile(r'^(\S.*\S|\S)$', re.UNICODE)
 
 def resolveGroup(frm):
     """
