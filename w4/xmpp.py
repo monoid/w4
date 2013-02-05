@@ -241,7 +241,7 @@ class PresenceHandler(xmppim.PresenceProtocol):
         group, nick = resolveGroup(presence.recipient)
         gr = Group.find(group)
 
-        if gr:
+        if gr and gr.channels.get(nick):
             ch = gr.channels.get(nick).channel
             if ch:
                 gr.leave(ch)
