@@ -125,6 +125,27 @@ class PresenceHandler(xmppim.PresenceProtocol):
 
         gr = Group.find(group)
 
+        if gr is None:
+            reply = domish.Element(('jabber.client', 'presence'))
+            reply['to'] = presence.sender.full()
+            reply['from'] = presence.recipient.full()
+            reply['type'] = 'error'
+
+            x = domish.Element((muc.NS_MUC, 'x'))
+            reply.addChild(x)
+
+            err = domish.Element((muc.NS_MUC, 'error'))
+            err['by'] = presence.recipient.userhost()
+            err['type'] = 'cancel'
+            reply.addChild(err)
+
+            na = domish.Element(('urn:ietf:params:xml:ns:xmpp-stanzas',
+                'not-allowed'))
+            err.addChild(na)
+
+            self.send(reply)
+            return
+
         groupjid = gr.groupJid()
 
         # Validate nickname
