@@ -89,6 +89,17 @@ class HTTPChannel(BaseChannel):
         if self.poll == chan:  # Precaution left from old version...
             self.poll = None
 
+    def sendInitialInfo(self, group):
+        hist = list(group.history)
+        if group.subject:
+            hist += [{'cmd': 'subject',
+            'group': group.name,
+            'message': group.subject
+            }]
+
+        self.sendMessages(hist)
+        # Roster is returned as reply to login request... TODO FIXME
+
     def sendMessages(self, messages):
         if len(self.messages) >= 100:
             self.messages = messages
@@ -179,6 +190,7 @@ class Login(Resource):
 
         group.join(chan, nickname)
 
+        # FIXME This should be done in a HTTPChannel.sendInitialInfo method.
         return json.dumps(roster)
 
 

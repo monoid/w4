@@ -47,10 +47,6 @@ class XMPPChannel(BaseChannel):
     jid = None
     # Component for sending messages
     comp = None
-    # Initialization complete
-    # TODO bug: it should be complete for each group separately.
-    # It requires refactoring: sendHistory method.
-    complete = None
 
     # Class attribute
     jids = {}
@@ -59,7 +55,6 @@ class XMPPChannel(BaseChannel):
         BaseChannel.__init__(self)
         self.jid = j
         self.comp = comp
-        self.complete = False
 
         XMPPChannel.jids[self.getJidStr()] = self
 
@@ -68,10 +63,53 @@ class XMPPChannel(BaseChannel):
         """
         return self.jid.full()
 
-    def sendMessages(self, msgs):
-        if not self.complete:
-            return
+    def sendInitialInfo(self, gr):
+        users = gr.users()
+        for un in users:
+            reply = domish.Element(('jabber.client', 'presence'))
 
+            reply['from'] = gr.userJid(un).full()
+            reply['to'] = self.getJidStr()
+
+            x = domish.Element((muc.NS_MUC_USER, 'x'))
+            item = domish.Element((muc.NS_MUC_USER, 'item'))
+            item['affiliation'] = 'member'
+            item['role'] = 'participant'
+
+            x.addChild(item)
+            reply.addChild(x)
+            self.comp.send(reply)
+
+        # Send self name to user with status code 110
+        reply = domish.Element(('jabber.client', 'presence'))
+        reply['from'] = self.jidInGroup(gr.name).full()
+        reply['to'] = self.jid.full()
+        x = domish.Element((muc.NS_MUC_USER, 'x'))
+        item = domish.Element((muc.NS_MUC_USER, 'item'))
+        item['affiliation'] = 'member'
+        item['role'] = 'participant'
+        status = domish.Element((muc.NS_MUC_USER, 'status'))
+        status['code'] = '110'
+        x.addChild(item)
+        x.addChild(status)
+        reply.addChild(x)
+        self.comp.send(reply)
+
+        # Send history if user needs it.
+        for msg in gr.history:
+            reply = muc.GroupChat(self.jid,
+                gr.userJid(msg['user']),
+                body=unicode(msg['message']))
+
+            ts = datetime.fromtimestamp(int(msg['ts'] / 1000)).isoformat() # TODO: Z
+
+            self.comp.send(reply.toElement(ts))
+
+        # Send room subject
+        reply = muc.GroupChat(self.jid, gr.jid, subject=gr.subject)
+        self.comp.send(reply.toElement())
+
+    def sendMessages(self, msgs):
         for m in msgs:
             cmd = m['cmd']
 
@@ -170,7 +208,6 @@ class PresenceHandler(xmppim.PresenceProtocol):
             self.send(reply)
             return
 
-        users = gr.users()
 
         if presence.sender.full() in XMPPChannel.jids:
             ch = XMPPChannel.jids[presence.sender.full()]
@@ -182,60 +219,10 @@ class PresenceHandler(xmppim.PresenceProtocol):
             # 'Away' or something like this.
             # TODO broadcast status...
             return
+        else:
+            gr.join(ch, nick)
 
-        gr.join(ch, nick)
-
-        for un in users:
-            reply = domish.Element(('jabber.client', 'presence'))
-
-            reply['from'] = gr.userJid(un).full()
-            reply['to'] = ch.getJidStr()
-
-            x = domish.Element((muc.NS_MUC_USER, 'x'))
-            item = domish.Element((muc.NS_MUC_USER, 'item'))
-            item['affiliation'] = 'member'
-            item['role'] = 'participant'
-
-            x.addChild(item)
-            reply.addChild(x)
-            self.send(reply)
-
-        # Send self name to user with status code 110
-        reply = domish.Element(('jabber.client', 'presence'))
-
-        reply['from'] = ch.jidInGroup(gr.name).full()
-        reply['to'] = presence.sender.full()
-
-        x = domish.Element((muc.NS_MUC_USER, 'x'))
-        item = domish.Element((muc.NS_MUC_USER, 'item'))
-        item['affiliation'] = 'member'
-        item['role'] = 'participant'
-
-        status = domish.Element((muc.NS_MUC_USER, 'status'))
-        status['code'] = '110'
-
-        x.addChild(item)
-        x.addChild(status)
-        reply.addChild(x)
-        self.send(reply)
-
-
-        # Send history if user needs it.
-        for msg in gr.history:
-            reply = muc.GroupChat(presence.sender,
-                gr.userJid(msg['user']),
-                body=unicode(msg['message']))
-
-            ts = datetime.fromtimestamp(int(msg['ts']/1000)).isoformat() # TODO: Z
-
-            self.send(reply.toElement(ts))
-
-        # Send room subject
-        reply = muc.GroupChat(presence.sender, gr.jid, subject=gr.subject)
-
-        self.send(reply.toElement())
-
-        ch.complete = True
+            self.sendInitialInfo(ch, gr, presence)
 
     def unavailableReceived(self, presence):
         group, nick = resolveGroup(presence.recipient)

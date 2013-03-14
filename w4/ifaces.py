@@ -19,6 +19,10 @@ class IChannel(Interface):
         """ User's nick in the group, or None.
         """
 
+    def sendInitialInfo(self, group):
+        """ Send group's initial info on join.
+        """
+
     def sendMessages(self, messages):
         """ Send array of messages to channel.
         """

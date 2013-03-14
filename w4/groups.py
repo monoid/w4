@@ -66,14 +66,6 @@ class Group:
 
     def join(self, chan, nickname):
         if self.public:
-            hist = list(self.history)
-            if self.subject:
-                hist += [{'cmd': 'subject',
-                          'group': self.name,
-                          'message': self.subject
-                         }]
-            chan.sendMessages(hist)
-
             if nickname in self.channels:
                 if self.channels[nickname].channel == chan:
                     # returning user with same nickname.
@@ -89,6 +81,8 @@ class Group:
                     self.leave(chan)
 
             chan.groups[self.name] = self.channels[nickname] = MUCUser(self, nickname, chan)
+
+            chan.sendInitialInfo(self)
 
             self.broadcast({
                 'cmd': 'join',
