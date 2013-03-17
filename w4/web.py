@@ -13,7 +13,7 @@ import json
 import time
 
 SESSION_TIMEOUT = 300     # Ten minutes
-POLL_TIMEOUT = 120-0.2    # Almost two minutes
+POLL_TIMEOUT = 120 - 0.2    # Almost two minutes
 GC_PERIOD = 10            # Half minute
 
 
@@ -33,6 +33,7 @@ class User():
     def __init__(self, _):
         self.name = None
 
+
 registerAdapter(User, server.Session, IUser)
 
 
@@ -50,7 +51,7 @@ class HTTPChannel(BaseChannel):
     def __init__(self, session):
         BaseChannel.__init__(self)
         self.messages = [{'cmd': 'ping'}]  # Force request completion
-                                           # to set session cookie.
+        # to set session cookie.
         HTTPChannel.channels[session.uid] = self
         self.uid = session.uid
 
@@ -64,13 +65,13 @@ class HTTPChannel(BaseChannel):
 
     def setPoll(self, poll):
         if self.poll:
-            poll.setResponseCode(403) # TODO
+            poll.setResponseCode(403)  # TODO
             poll.setHeader('Content-type', 'application/json')
             json.dump([{
-                'cmd': 'error',
-                'type': 'duplicate-poll',
-                'message': "It seems you opened chat in multiple windows..."
-            }], poll)
+                        'cmd': 'error',
+                        'type': 'duplicate-poll',
+                        'message': "It seems you opened chat in multiple windows..."
+                       }], poll)
             poll.finish()
             return
 
@@ -92,10 +93,11 @@ class HTTPChannel(BaseChannel):
     def sendInitialInfo(self, group):
         hist = list(group.history)
         if group.subject:
-            hist += [{'cmd': 'subject',
-            'group': group.name,
-            'message': group.subject
-            }]
+            hist += [{
+                        'cmd': 'subject',
+                        'group': group.name,
+                        'message': group.subject
+                     }]
 
         self.sendMessages(hist)
         # Roster is returned as reply to login request... TODO FIXME
@@ -123,10 +125,10 @@ class HTTPChannel(BaseChannel):
 
     def error(self, error, group=None):
         self.sendMessages([{
-            'cmd': 'error',
-            'group': group,
-            'message': error
-        }])
+                               'cmd': 'error',
+                               'group': group,
+                               'message': error
+                           }])
 
     def flush(self):
         self.sendMessages([])
@@ -143,8 +145,8 @@ class HTTPChannel(BaseChannel):
             if (channel.ts is not None) and (channel.ts + channel.to <= ts):
                 channel.flush()
 
-registerAdapter(HTTPChannel, server.Session, IChannel)
 
+registerAdapter(HTTPChannel, server.Session, IChannel)
 
 
 ######################################################################
@@ -162,9 +164,9 @@ class Login(Resource):
 
         if group is None:
             return json.dumps([{
-                'cmd':'error',
-                'group': group,
-                'message': 'Group does not exist'
+                                   'cmd': 'error',
+                                   'group': group,
+                                   'message': 'Group does not exist'
             }])
 
         # check if name is valid
@@ -179,9 +181,9 @@ class Login(Resource):
             valid = False
         if not valid:
             return json.dumps([{
-                'cmd': 'error',
-                'group': group,
-                'message': u"Invalid nickname '%s'" % (nickname,)
+                                   'cmd': 'error',
+                                   'group': group,
+                                   'message': u"Invalid nickname '%s'" % (nickname,)
             }])
 
         roster = {'users': group.users()}
@@ -218,15 +220,17 @@ class Post(Resource):
         nickname = chan.groups.get(group.name).nick
         if nickname:
             if msg.startswith("/me "):
-                message = {'cmd': 'me',
-                           'user': nickname,
-                           'message': msg[4:]
-                           }
+                message = {
+                    'cmd': 'me',
+                    'user': nickname,
+                    'message': msg[4:]
+                }
             else:
-                message = {'cmd': 'say',
-                           'user': nickname,
-                           'message': msg
-                           }
+                message = {
+                    'cmd': 'say',
+                    'user': nickname,
+                    'message': msg
+                }
 
             group.broadcast(message)
             return "OK"
@@ -251,6 +255,7 @@ class Poll(Resource):
 class W4ChanGcService(internet.TimerService):
     """ Service for gc'ing channels.
     """
+
     def __init__(self, interval=GC_PERIOD):
         internet.TimerService.__init__(self, interval, self._chanGc)
 

@@ -1,5 +1,6 @@
 from zope.interface import Attribute, Interface
 
+
 class IChannel(Interface):
     """ Channel represents either HTTP or XMPP user session.
     """
@@ -38,4 +39,3 @@ class IChannel(Interface):
     def close(self):
         """ Close the channel.
         """
-

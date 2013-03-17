@@ -10,9 +10,10 @@ from .ifaces import IChannel
 import re
 from datetime import datetime
 
-LOG=True
+LOG = True
 
 VALID_NICK = re.compile(r'^\b.+\b$', re.UNICODE)
+
 
 def resolveGroup(frm):
     """
@@ -98,10 +99,9 @@ class XMPPChannel(BaseChannel):
         # Send history if user needs it.
         for msg in gr.history:
             reply = muc.GroupChat(self.jid,
-                gr.userJid(msg['user']),
-                body=unicode(msg['message']))
+                                  gr.userJid(msg['user']), body=unicode(msg['message']))
 
-            ts = datetime.fromtimestamp(int(msg['ts'] / 1000)).isoformat() # TODO: Z
+            ts = datetime.fromtimestamp(int(msg['ts'] / 1000)).isoformat()  # TODO: Z
 
             self.comp.send(reply.toElement(ts))
 
@@ -116,26 +116,26 @@ class XMPPChannel(BaseChannel):
             if cmd == 'say':
                 gr = Group.find(m['group'])
                 reply = muc.GroupChat(self.jid, gr.userJid(m['user']),
-                    body=unicode(m['message']))
+                                      body=unicode(m['message']))
                 self.comp.send(reply.toElement())
             elif cmd == 'me':
                 gr = Group.find(m['group'])
                 reply = muc.GroupChat(self.jid, gr.userJid(m['user']),
-                    body=unicode(u'/me '+m['message']))
+                                      body=unicode(u'/me ' + m['message']))
                 self.comp.send(reply.toElement())
             elif cmd == 'join':
                 gr = Group.find(m['group'])
                 reply = OurUserPresence(recipient=self.jid,
-                    sender=gr.userJid(m['user']),
-                    available=True)
-                reply.role='participant'
-                reply.affiliation='member'
+                                        sender=gr.userJid(m['user']),
+                                        available=True)
+                reply.role = 'participant'
+                reply.affiliation = 'member'
                 self.comp.send(reply.toElement())
             elif cmd == 'leave':
                 gr = Group.find(m['group'])
                 reply = OurUserPresence(recipient=self.jid,
-                    sender=gr.userJid(m['user']),
-                    available=False)
+                                        sender=gr.userJid(m['user']),
+                                        available=False)
                 usr = self.groups[m['group']]
                 if usr.nick == m['user']:
                     reply.mucStatuses.add(110)
@@ -178,7 +178,7 @@ class PresenceHandler(xmppim.PresenceProtocol):
             reply.addChild(err)
 
             na = domish.Element(('urn:ietf:params:xml:ns:xmpp-stanzas',
-                'not-allowed'))
+                                 'not-allowed'))
             err.addChild(na)
 
             self.send(reply)
@@ -208,7 +208,6 @@ class PresenceHandler(xmppim.PresenceProtocol):
             self.send(reply)
             return
 
-
         if presence.sender.full() in XMPPChannel.jids:
             ch = XMPPChannel.jids[presence.sender.full()]
         else:
@@ -222,7 +221,7 @@ class PresenceHandler(xmppim.PresenceProtocol):
         else:
             gr.join(ch, nick)
 
-            self.sendInitialInfo(ch, gr, presence)
+            ch.sendInitialInfo(gr)
 
     def unavailableReceived(self, presence):
         group, nick = resolveGroup(presence.recipient)
@@ -254,9 +253,9 @@ class ChatHandler(xmppim.MessageProtocol):
             nick = ch.groups[group].nick
 
             gr.broadcast({
-               'cmd': 'say',
-               'user': nick,
-               'message': unicode(message.body)
+                'cmd': 'say',
+                'user': nick,
+                'message': unicode(message.body)
             })
         else:
             # TODO Error: not member
@@ -278,7 +277,7 @@ class ChatHandler(xmppim.MessageProtocol):
         if group is None:
             # Return list of groups
             items = [disco.DiscoItem(gr.groupJid(), name=gr.name)
-                    for gr in Group.groups.values()]
+                     for gr in Group.groups.values()]
             return items
         else:
             # TODO

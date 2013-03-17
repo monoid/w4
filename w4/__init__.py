@@ -12,10 +12,6 @@ import re
 VALID_NICK = re.compile(r'^\S.*\S$', re.UNICODE)
 
 
-
-
-
-
 class W4HistService(service.Service):
     """ Service for loading and story history on start and stop.
     """
@@ -42,7 +38,8 @@ class W4HistService(service.Service):
             log.err()
 
 
-AUTOSAVE_PERIOD = 10*60  # 10 minutes
+AUTOSAVE_PERIOD = 10 * 60  # 10 minutes
+
 
 class W4AutosaveService(internet.TimerService):
     """ Service for periodic storing history.
@@ -58,10 +55,10 @@ class W4AutosaveService(internet.TimerService):
         except IOError:
             log.err()
 
+
 class W4Service(service.MultiService):
     def __init__(self, histfile):
         service.MultiService.__init__(self)
-
 
         exitsave = W4HistService(histfile)
         exitsave.setServiceParent(self)
@@ -71,4 +68,3 @@ class W4Service(service.MultiService):
 
         changc = W4ChanGcService()
         changc.setServiceParent(self)
-

@@ -5,9 +5,7 @@ import time
 HISTORY_SIZE = 10
 
 SESSION_TIMEOUT = 300     # Ten minutes
-POLL_TIMEOUT = 120-0.2    # Almost two minutes
 GC_PERIOD = 10            # Half minute
-
 
 
 class History:
@@ -109,7 +107,7 @@ class Group:
             return False
 
     def broadcast(self, message):
-        message['ts'] = int(1000*time.time())
+        message['ts'] = int(1000 * time.time())
         message['group'] = self.name
         self.history.message(message)
         for usr in self.channels.values():
@@ -200,4 +198,3 @@ class MUCUser():
             :rtype JID
         """
         return self.jid
-
