@@ -252,7 +252,7 @@ class ChatHandler(xmppim.MessageProtocol):
             ch = XMPPChannel.jids[frm]
             nick = ch.groups[group].nick
 
-            if message.body:
+            if message.body is not None:
                 # It may be None if it is a chat state notification like 'composing'.
                 gr.broadcast({
                     'cmd': 'say',
