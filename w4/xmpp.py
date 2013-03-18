@@ -252,11 +252,13 @@ class ChatHandler(xmppim.MessageProtocol):
             ch = XMPPChannel.jids[frm]
             nick = ch.groups[group].nick
 
-            gr.broadcast({
-                'cmd': 'say',
-                'user': nick,
-                'message': unicode(message.body)
-            })
+            if message.body:
+                # It may be None if it is a chat state notification like 'composing'.
+                gr.broadcast({
+                    'cmd': 'say',
+                    'user': nick,
+                    'message': unicode(message.body)
+                })
         else:
             # TODO Error: not member
             pass
