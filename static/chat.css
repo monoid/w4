@@ -89,6 +89,7 @@
     margin: 1px;
     padding: 2px;
     padding-left: 10px;
+    white-space: pre;
 }
 
 #roster-list li:hover {
