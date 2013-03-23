@@ -31,6 +31,7 @@ class History:
 class Group:
     name = None
     public = True
+    # Map nick -> MUCUser
     channels = None
     history = None
     subject = None
@@ -151,7 +152,7 @@ class BaseChannel():
     """ Base implementation of channel with utility methods.
     """
 
-    # Mapping of group name -> nick.
+    # Mapping of group name -> MUCUser.
     groups = None
 
     def __init__(self):
