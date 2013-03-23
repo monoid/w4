@@ -66,9 +66,9 @@ class HTTPChannel(BaseChannel):
             poll.setResponseCode(403)  # TODO
             poll.setHeader('Content-type', 'application/json')
             json.dump([{
-                        'cmd': 'error',
-                        'type': 'duplicate-poll',
-                        'message': "It seems you opened chat in multiple windows..."
+                           'cmd': 'error',
+                           'type': 'duplicate-poll',
+                           'message': "It seems you opened chat in multiple windows..."
                        }], poll)
             poll.finish()
             return
@@ -92,9 +92,9 @@ class HTTPChannel(BaseChannel):
         hist = list(group.history)
         if group.subject:
             hist += [{
-                        'cmd': 'subject',
-                        'group': group.name,
-                        'message': group.subject
+                         'cmd': 'subject',
+                         'group': group.name,
+                         'message': group.subject
                      }]
 
         self.sendMessages(hist)
@@ -165,7 +165,7 @@ class Login(Resource):
                                    'cmd': 'error',
                                    'group': group,
                                    'message': 'Group does not exist'
-            }])
+                               }])
 
         roster = {'users': group.users()}
 
@@ -177,12 +177,11 @@ class Login(Resource):
             # FIXME This should be done in a HTTPChannel.sendInitialInfo method.
             return json.dumps(roster)
         except InvalidNickException:
-             return json.dumps([{
+            return json.dumps([{
                                    'cmd': 'error',
                                    'group': group,
                                    'message': u"Invalid nickname '%s'" % (nickname,)
-            }])
-
+                               }])
 
 
 class Logout(Resource):
