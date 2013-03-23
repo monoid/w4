@@ -4,15 +4,13 @@ from twisted.words.xish import domish
 from wokkel import component, disco, iwokkel, muc, server, xmppim
 from zope.interface import implements
 
-from .groups import Group, BaseChannel
+from .groups import Group, BaseChannel, InvalidNickException
 from .ifaces import IChannel
 
-import re
 from datetime import datetime
 
 LOG = True
 
-VALID_NICK = re.compile(r'^\b.+\b$', re.UNICODE)
 
 
 def resolveGroup(frm):
@@ -156,6 +154,14 @@ class XMPPChannel(BaseChannel):
         BaseChannel.close(self)
         del XMPPChannel.jids[self.jid.full()]
 
+    @classmethod
+    def getChannel(cls, jid, comp):
+        sjid = jid.full()
+        if sjid in cls.jids:
+            return cls.jids[sjid]
+        else:
+            return XMPPChannel(jid, comp)
+
 
 class PresenceHandler(xmppim.PresenceProtocol):
     def availableReceived(self, presence):
@@ -186,32 +192,8 @@ class PresenceHandler(xmppim.PresenceProtocol):
 
         groupjid = gr.groupJid()
 
-        # Validate nickname
-        if nick:
-            if VALID_NICK.match(nick):
-                pass
-            else:
-                "Error: incorrect nick"
-        else:
-            reply = domish.Element(('jabber.client', 'presence'))
-            reply['to'] = presence.sender.full()
-            reply['from'] = groupjid
 
-            err = domish.Element(('jabber.client', 'error'))
-            err['by'] = groupjid
-            err['type'] = 'modify'
-
-            jm = domish.Element(('urn:ietf:params:xml:ns:xmpp-stanzas', 'jid-malformed'))
-            err.addChild(jm)
-            reply.addChild(err)
-
-            self.send(reply)
-            return
-
-        if presence.sender.full() in XMPPChannel.jids:
-            ch = XMPPChannel.jids[presence.sender.full()]
-        else:
-            ch = XMPPChannel(presence.sender, self.parent)
+        ch = XMPPChannel.getChannel(presence.sender, self.parent)
 
         if gr.name in ch.groups:
             # We are already in the group, it just status changed to
@@ -219,9 +201,26 @@ class PresenceHandler(xmppim.PresenceProtocol):
             # TODO broadcast status...
             return
         else:
-            gr.join(ch, nick)
+            try:
+                gr.join(ch, nick)
 
-            ch.sendInitialInfo(gr)
+                ch.sendInitialInfo(gr)
+            except InvalidNickException as ex:
+                reply = domish.Element(('jabber.client', 'presence'))
+                reply['to'] = presence.sender.full()
+                reply['from'] = groupjid
+
+                err = domish.Element(('jabber.client', 'error'))
+                err['by'] = groupjid
+                err['type'] = 'modify'
+
+                jm = domish.Element(('urn:ietf:params:xml:ns:xmpp-stanzas', 'jid-malformed'))
+                err.addChild(jm)
+                reply.addChild(err)
+
+                self.send(reply)
+
+
 
     def unavailableReceived(self, presence):
         group, nick = resolveGroup(presence.recipient)

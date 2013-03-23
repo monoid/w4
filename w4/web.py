@@ -2,11 +2,9 @@ from twisted.application import internet
 from twisted.python.components import registerAdapter
 from twisted.web import static, server
 from twisted.web.resource import Resource
-from twisted.words.protocols.jabber.xmpp_stringprep import resourceprep
 from zope.interface import Interface, Attribute, implements
 
-from .groups import Group, BaseChannel
-from .xmpp import VALID_NICK
+from .groups import Group, BaseChannel, InvalidNickException
 from .ifaces import IChannel
 
 import json
@@ -169,31 +167,22 @@ class Login(Resource):
                                    'message': 'Group does not exist'
             }])
 
-        # check if name is valid
-        valid = True
+        roster = {'users': group.users()}
+
         try:
-            nickname = resourceprep.prepare(nickname.decode('utf-8'))
-            if not VALID_NICK.match(nickname):
-                valid = False
-            if len(nickname) > 18:
-                valid = False
-        except:
-            valid = False
-        if not valid:
-            return json.dumps([{
+            chan = IChannel(session)
+
+            group.join(chan, nickname)
+
+            # FIXME This should be done in a HTTPChannel.sendInitialInfo method.
+            return json.dumps(roster)
+        except InvalidNickException:
+             return json.dumps([{
                                    'cmd': 'error',
                                    'group': group,
                                    'message': u"Invalid nickname '%s'" % (nickname,)
             }])
 
-        roster = {'users': group.users()}
-
-        chan = IChannel(session)
-
-        group.join(chan, nickname)
-
-        # FIXME This should be done in a HTTPChannel.sendInitialInfo method.
-        return json.dumps(roster)
 
 
 class Logout(Resource):

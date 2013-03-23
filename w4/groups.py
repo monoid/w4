@@ -1,11 +1,16 @@
 from twisted.words.protocols.jabber.jid import JID
+from twisted.words.protocols.jabber.xmpp_stringprep import resourceprep
+
 from collections import deque
 import time
+import re
 
 HISTORY_SIZE = 10
 
 SESSION_TIMEOUT = 300     # Ten minutes
 GC_PERIOD = 10            # Half minute
+
+VALID_NICK_REGEX = re.compile(r'^\b.+\b$', re.UNICODE)
 
 
 class History:
@@ -24,6 +29,12 @@ class History:
 
     def __iter__(self):
         return self.buf.__iter__()
+
+
+class InvalidNickException(Exception):
+    def __init__(self, *args, **kwargs):
+        self.iargs = args
+        self.ikwargs = kwargs
 
 
 # TODO: group should have an ACL.  Even public group has an ACL where
@@ -64,6 +75,20 @@ class Group:
         return self.channels.keys()
 
     def join(self, chan, nickname):
+        # Check nick validity
+        try:
+            nickname = resourceprep.prepare(nickname.decode('utf-8'))
+            if not nickname or not VALID_NICK_REGEX.match(nickname):
+                raise InvalidNickException(nick=nickname,
+                                           xmpp=('urn:ietf:params:xml:ns:xmpp-stanzas', 'jid-malformed'))
+            if len(nickname) > 18:
+                raise InvalidNickException(nick=nickname,
+                                           reason="Nickname too long",
+                                           xmpp=('urn:ietf:params:xml:ns:xmpp-stanzas', 'jid-malformed'))
+        except UnicodeError:
+            raise InvalidNickException(nick=nickname)
+
+
         if self.public:
             if nickname in self.channels:
                 if self.channels[nickname].channel == chan:

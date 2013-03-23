@@ -7,10 +7,6 @@ from .web import W4ChanGcService, site
 
 from collections import deque
 
-import re
-
-VALID_NICK = re.compile(r'^\S.*\S$', re.UNICODE)
-
 
 class W4HistService(service.Service):
     """ Service for loading and story history on start and stop.

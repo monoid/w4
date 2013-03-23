@@ -4,6 +4,7 @@ from twisted.application import service, internet
 from twisted.internet import reactor
 
 import w4
+import w4.xmpp
 
 PORT = 8765
 
