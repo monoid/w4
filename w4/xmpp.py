@@ -267,7 +267,11 @@ class ChatHandler(xmppim.MessageProtocol):
         if group in Group.groups and not ni and not nick:
             gr = Group.find(group)
             di = disco.DiscoInfo()
+
             di.append(disco.DiscoIdentity(u'conference', u'text', name=gr.name))
+            for f in gr.getDiscoFeatures():
+                di.append(f)
+
             return di
         else:
             # TODO

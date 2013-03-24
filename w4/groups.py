@@ -4,6 +4,7 @@ from twisted.words.protocols.jabber.xmpp_stringprep import resourceprep
 from collections import deque
 import time
 import re
+from wokkel import disco
 
 HISTORY_SIZE = 10
 
@@ -155,6 +156,14 @@ class Group:
         self.public = state['public']
         self.history = History(hist=state['history'])
         self.subject = state['subject']
+
+    def getDiscoFeatures(self):
+        return map(disco.DiscoFeature,
+                   ['http://jabber.org/protocol/muc',
+                   'muc_unmoderated',
+                   'muc_open',
+                   'muc_persistent',
+                   'muc_unsecured'])
 
     @classmethod
     def find(cls, groupname):
