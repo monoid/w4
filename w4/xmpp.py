@@ -65,30 +65,29 @@ class XMPPChannel(BaseChannel):
     def sendInitialInfo(self, gr):
         users = gr.users()
         for un in users:
-            reply = domish.Element(('jabber.client', 'presence'))
-
-            reply['from'] = gr.userJid(un).full()
-            reply['to'] = self.getJidStr()
+            reply = domish.Element(('jabber.client', 'presence'),
+                                   attribs={'from': gr.userJid(un).full(),
+                                            'to': self.getJidStr()})
 
             x = domish.Element((muc.NS_MUC_USER, 'x'))
-            item = domish.Element((muc.NS_MUC_USER, 'item'))
-            item['affiliation'] = 'member'
-            item['role'] = 'participant'
+            item = domish.Element((muc.NS_MUC_USER, 'item'),
+                                  attribs={'affiliation': 'member',
+                                           'role': 'participant'})
 
             x.addChild(item)
             reply.addChild(x)
             self.comp.send(reply)
 
         # Send self name to user with status code 110
-        reply = domish.Element(('jabber.client', 'presence'))
-        reply['from'] = self.jidInGroup(gr.name).full()
-        reply['to'] = self.jid.full()
+        reply = domish.Element(('jabber.client', 'presence'),
+                               attribs={'from': self.jidInGroup(gr.name).full(),
+                                        'to': self.jid.full()})
         x = domish.Element((muc.NS_MUC_USER, 'x'))
-        item = domish.Element((muc.NS_MUC_USER, 'item'))
-        item['affiliation'] = 'member'
-        item['role'] = 'participant'
-        status = domish.Element((muc.NS_MUC_USER, 'status'))
-        status['code'] = '110'
+        item = domish.Element((muc.NS_MUC_USER, 'item'),
+                              attribs={'affiliation': 'member',
+                                       'role': 'participant'})
+        status = domish.Element((muc.NS_MUC_USER, 'status'),
+                                attribs={'code': '110'})
         x.addChild(item)
         x.addChild(status)
         reply.addChild(x)
@@ -169,18 +168,20 @@ class PresenceHandler(xmppim.PresenceProtocol):
 
         gr = Group.find(group)
 
+        sender = presence.sender.full()
+        recipient = presence.recipient.full()
         if gr is None:
-            reply = domish.Element(('jabber.client', 'presence'))
-            reply['to'] = presence.sender.full()
-            reply['from'] = presence.recipient.full()
-            reply['type'] = 'error'
+            reply = domish.Element(('jabber.client', 'presence'),
+                                   attribs={'to': sender,
+                                            'from': recipient,
+                                            'type': 'error'})
 
             x = domish.Element((muc.NS_MUC, 'x'))
             reply.addChild(x)
 
-            err = domish.Element((muc.NS_MUC, 'error'))
-            err['by'] = presence.recipient.userhost()
-            err['type'] = 'cancel'
+            err = domish.Element((muc.NS_MUC, 'error'),
+                                 attribs={'by': presence.recipient.userhost(),
+                                          'type': 'cacnel'})
             reply.addChild(err)
 
             na = domish.Element((error.NS_XMPP_STANZAS,
@@ -204,13 +205,11 @@ class PresenceHandler(xmppim.PresenceProtocol):
             try:
                 gr.join(ch, nick)
             except InvalidNickException as ex:
-                reply = domish.Element(('jabber.client', 'presence'))
-                reply['to'] = presence.sender.full()
-                reply['from'] = groupjid
+                reply = domish.Element(('jabber.client', 'presence'),
+                                       attribs={'to': sender, 'from': groupjid})
 
-                err = domish.Element(('jabber.client', 'error'))
-                err['by'] = groupjid
-                err['type'] = 'modify'
+                err = domish.Element(('jabber.client', 'error'),
+                                     attribs={'by': groupjid, 'type': 'modify'})
 
                 jm = domish.Element((error.NS_XMPP_STANZAS, 'jid-malformed'))
                 err.addChild(jm)
