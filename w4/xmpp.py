@@ -1,5 +1,5 @@
 from twisted.application import strports
-from twisted.words.protocols.jabber import jid
+from twisted.words.protocols.jabber import jid, error
 from twisted.words.xish import domish
 from wokkel import component, disco, iwokkel, muc, server, xmppim
 from zope.interface import implements
@@ -183,7 +183,7 @@ class PresenceHandler(xmppim.PresenceProtocol):
             err['type'] = 'cancel'
             reply.addChild(err)
 
-            na = domish.Element(('urn:ietf:params:xml:ns:xmpp-stanzas',
+            na = domish.Element((error.NS_XMPP_STANZAS,
                                  'not-allowed'))
             err.addChild(na)
 
@@ -212,7 +212,7 @@ class PresenceHandler(xmppim.PresenceProtocol):
                 err['by'] = groupjid
                 err['type'] = 'modify'
 
-                jm = domish.Element(('urn:ietf:params:xml:ns:xmpp-stanzas', 'jid-malformed'))
+                jm = domish.Element((error.NS_XMPP_STANZAS, 'jid-malformed'))
                 err.addChild(jm)
                 reply.addChild(err)
 
