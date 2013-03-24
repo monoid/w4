@@ -203,8 +203,6 @@ class PresenceHandler(xmppim.PresenceProtocol):
         else:
             try:
                 gr.join(ch, nick)
-
-                ch.sendInitialInfo(gr)
             except InvalidNickException as ex:
                 reply = domish.Element(('jabber.client', 'presence'))
                 reply['to'] = presence.sender.full()
