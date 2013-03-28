@@ -260,9 +260,7 @@ class ChatHandler(xmppim.MessageProtocol):
                 else:
                     raise error.StanzaError('bad-request')
             else:
-                di = []
-
-                di.append(disco.DiscoIdentity(u'conference', u'text', name=gr.name))
+                di = [disco.DiscoIdentity(u'conference', u'text', name=gr.name)]
                 for f in gr.getDiscoFeatures():
                     di.append(f)
 
