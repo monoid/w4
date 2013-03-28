@@ -196,9 +196,6 @@ class PresenceHandler(xmppim.PresenceProtocol):
             self.send(reply)
             return
 
-        groupjid = gr.groupJid()
-
-
         ch = XMPPChannel.getChannel(presence.sender, self.parent)
 
         if gr.name in ch.groups:
@@ -209,9 +206,8 @@ class PresenceHandler(xmppim.PresenceProtocol):
         else:
             try:
                 gr.join(ch, nick)
-            except InvalidNickException as ex:
+            except InvalidNickException:
                 raise error.StanzaError('jid-malformed', type='modify')
-
 
     def unavailableReceived(self, presence):
         group, nick = resolveGroup(presence.recipient)
