@@ -205,18 +205,7 @@ class PresenceHandler(xmppim.PresenceProtocol):
             try:
                 gr.join(ch, nick)
             except InvalidNickException as ex:
-                reply = domish.Element(('jabber.client', 'presence'),
-                                       attribs={'to': sender, 'from': groupjid})
-
-                err = domish.Element(('jabber.client', 'error'),
-                                     attribs={'by': groupjid, 'type': 'modify'})
-
-                jm = domish.Element((error.NS_XMPP_STANZAS, 'jid-malformed'))
-                err.addChild(jm)
-                reply.addChild(err)
-
-                self.send(reply)
-
+                raise error.StanzaError('jid-malformed', type='modify')
 
 
     def unavailableReceived(self, presence):
