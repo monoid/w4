@@ -161,6 +161,11 @@ class XMPPChannel(BaseChannel):
         else:
             return XMPPChannel(jid, comp)
 
+    @classmethod
+    def isMember(cls, jid, group):
+        ch = cls.jids.get(jid, None)
+        return ch and (group.name in ch.groups)
+
 
 class PresenceHandler(xmppim.PresenceProtocol):
     def availableReceived(self, presence):
@@ -250,18 +255,25 @@ class ChatHandler(xmppim.MessageProtocol):
 
     def getDiscoInfo(self, req, target, ni):
         group, nick = resolveGroup(target)
-        if group in Group.groups and not ni and not nick:
+        if group in Group.groups and not ni:
             gr = Group.find(group)
-            di = disco.DiscoInfo()
+            if nick:
+                if XMPPChannel.isMember(req.full(), gr):
+                    # TODO
+                    raise error.StanzaError('service-unavailable')
+                else:
+                    raise error.StanzaError('bad-request')
+            else:
+                di = []
 
-            di.append(disco.DiscoIdentity(u'conference', u'text', name=gr.name))
-            for f in gr.getDiscoFeatures():
-                di.append(f)
+                di.append(disco.DiscoIdentity(u'conference', u'text', name=gr.name))
+                for f in gr.getDiscoFeatures():
+                    di.append(f)
 
-            return di
+                return di
         else:
             # TODO
-            return []
+            raise error.StanzaError('not-implemented')
 
     def getDiscoItems(self, req, target, ni):
         group, nick = resolveGroup(target)
