@@ -64,7 +64,10 @@ class XMPPChannel(BaseChannel):
 
     def sendInitialInfo(self, gr):
         users = gr.users()
+        myname = self.groups[gr.name].nick
         for un in users:
+            if myname == un:
+                continue
             reply = domish.Element(('jabber.client', 'presence'),
                                    attribs={'from': gr.userJid(un).full(),
                                             'to': self.getJidStr()})
