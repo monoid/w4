@@ -4,7 +4,7 @@ from twisted.web import static, server
 from twisted.web.resource import Resource
 from zope.interface import Interface, Attribute, implements
 
-from .groups import Group, BaseChannel, InvalidNickException
+from .groups import Group, BaseChannel, PresenceException
 from .ifaces import IChannel
 
 import json
@@ -176,11 +176,12 @@ class Login(Resource):
 
             # FIXME This should be done in a HTTPChannel.sendInitialInfo method.
             return json.dumps(roster)
-        except InvalidNickException:
+        except PresenceException as ex:
             return json.dumps([{
                                    'cmd': 'error',
                                    'group': group,
-                                   'message': u"Invalid nickname '%s'" % (nickname,)
+                                   'type': ex.stanzaType,
+                                   'message': u"Unable to join: '%s'" % (ex.tag,)
                                }])
 
 

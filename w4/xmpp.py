@@ -4,7 +4,7 @@ from twisted.words.xish import domish
 from wokkel import component, disco, iwokkel, muc, server, xmppim
 from zope.interface import implements
 
-from .groups import Group, BaseChannel, InvalidNickException
+from .groups import Group, BaseChannel, PresenceException
 from .ifaces import IChannel
 
 from datetime import datetime
@@ -173,28 +173,8 @@ class PresenceHandler(xmppim.PresenceProtocol):
 
         gr = Group.find(group)
 
-        sender = presence.sender.full()
-        recipient = presence.recipient.full()
         if gr is None:
-            reply = domish.Element(('jabber.client', 'presence'),
-                                   attribs={'to': sender,
-                                            'from': recipient,
-                                            'type': 'error'})
-
-            x = domish.Element((muc.NS_MUC, 'x'))
-            reply.addChild(x)
-
-            err = domish.Element((muc.NS_MUC, 'error'),
-                                 attribs={'by': presence.recipient.userhost(),
-                                          'type': 'cacnel'})
-            reply.addChild(err)
-
-            na = domish.Element((error.NS_XMPP_STANZAS,
-                                 'not-allowed'))
-            err.addChild(na)
-
-            self.send(reply)
-            return
+            raise error.StanzaError('not-allowed', type='cancel')
 
         ch = XMPPChannel.getChannel(presence.sender, self.parent)
 
@@ -206,8 +186,8 @@ class PresenceHandler(xmppim.PresenceProtocol):
         else:
             try:
                 gr.join(ch, nick)
-            except InvalidNickException:
-                raise error.StanzaError('jid-malformed', type='modify')
+            except PresenceException as ex:
+                raise error.StanzaError(ex.tag, type=ex.stanzaType)
 
     def unavailableReceived(self, presence):
         group, nick = resolveGroup(presence.recipient)

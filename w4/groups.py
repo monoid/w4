@@ -31,11 +31,24 @@ class History:
     def __iter__(self):
         return self.buf.__iter__()
 
+class PresenceException(Exception):
+    tag = ''
+    stanzaType = ''
 
-class InvalidNickException(Exception):
-    def __init__(self, *args, **kwargs):
-        self.iargs = args
-        self.ikwargs = kwargs
+
+class InvalidNickException(PresenceException):
+    tag = 'jid-malformed'
+    stanzaType = 'modify'
+
+
+class NickConflictException(PresenceException):
+    tag = 'conflict'
+    stanzaType = 'cancel'
+
+
+class RegistrationRequiredException(PresenceException):
+    tag = 'registration-required'
+    stanzaType = 'cancel'
 
 
 # TODO: group should have an ACL.  Even public group has an ACL where
@@ -96,8 +109,7 @@ class Group:
                     # returning user with same nickname.
                     return True
                 else:
-                    chan.error("Nickname exists.", group=self.name)
-                    return False
+                    raise NickConflictException()
 
             # Leave group if the channel have been logged before with
             # different names
@@ -115,9 +127,7 @@ class Group:
             })
             return True
         else:
-            # TODO: check ACL
-            chan.error('Access denied', self, group=self.name)
-            return False
+            raise RegistrationRequiredException()
 
     def leave(self, chan):
         nickname = chan.groups[self.name].nick
