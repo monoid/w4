@@ -193,13 +193,8 @@ class PresenceHandler(xmppim.PresenceProtocol):
                 except PresenceException as ex:
                     raise error.StanzaError(ex.tag, type=ex.stanzaType)
         except error.StanzaError as ex:
-            sender = presence.sender.full()
-            recipient = presence.recipient.full()
-
-            reply = ex.toResponse(presence)
-
+            reply = ex.toResponse(presence.toElement())
             self.send(reply)
-
 
     def unavailableReceived(self, presence):
         group, nick = resolveGroup(presence.recipient)
