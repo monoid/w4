@@ -210,9 +210,6 @@ class ChatHandler(xmppim.MessageProtocol):
     implements(iwokkel.IDisco)
 
     def onMessage(self, message):
-        if message.getAttribute('type') == 'error':
-            return
-
         if message.getAttribute('type') != 'groupchat':
             return
 
