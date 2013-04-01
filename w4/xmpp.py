@@ -210,28 +210,37 @@ class ChatHandler(xmppim.MessageProtocol):
     implements(iwokkel.IDisco)
 
     def onMessage(self, message):
-        if message.getAttribute('type') != 'groupchat':
-            return
+        try:
+            msgType = message.getAttribute('type')
+            group, nick = resolveGroup(message.getAttribute('to'))
 
-        group, nick = resolveGroup(message.getAttribute('to'))
+            gr = Group.groups.get(group)
 
-        gr = Group.groups.get(group)
+            frm = message.getAttribute('from')
 
-        frm = message.getAttribute('from')
-        if frm in XMPPChannel.jids and group in XMPPChannel.jids[frm].groups:
-            ch = XMPPChannel.jids[frm]
-            nick = ch.groups[group].nick
+            if frm in XMPPChannel.jids and group in XMPPChannel.jids[frm].groups:
+                ch = XMPPChannel.jids[frm]
+                senderNick = ch.groups[group].nick
 
-            if message.body is not None:
-                # It may be None if it is a chat state notification like 'composing'.
-                gr.broadcast({
-                    'cmd': 'say',
-                    'user': nick,
-                    'message': unicode(message.body)
-                })
-        else:
-            # TODO Error: not member
-            pass
+                if not nick and msgType == 'groupchat':
+                    # It may be None if it is a chat state notification like 'composing'.
+                    if message.body is not None:
+                        gr.broadcast({
+                            'cmd': 'say',
+                            'user': senderNick,
+                            'message': unicode(message.body)
+                        })
+                elif nick and msgType != 'groupchat':
+                    # TODO private messaging is handled here
+                    pass
+                else:
+                    # See Example 48
+                    raise error.StanzaError('bad-request', type='modify')
+            else:
+                raise error.StanzaError('not-acceptable', type='cancel')
+        except error.StanzaError as ex:
+            reply = ex.toResponse(message)
+            self.send(reply)
 
     def getDiscoInfo(self, req, target, ni):
         group, nick = resolveGroup(target)
