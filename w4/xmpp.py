@@ -172,25 +172,34 @@ class XMPPChannel(BaseChannel):
 
 class PresenceHandler(xmppim.PresenceProtocol):
     def availableReceived(self, presence):
-        group, nick = resolveGroup(presence.recipient)
+        try:
+            group, nick = resolveGroup(presence.recipient)
 
-        gr = Group.find(group)
+            gr = Group.find(group)
 
-        if gr is None:
-            raise error.StanzaError('not-allowed', type='cancel')
+            if gr is None:
+                raise error.StanzaError('not-allowed', type='cancel')
 
-        ch = XMPPChannel.getChannel(presence.sender, self.parent)
+            ch = XMPPChannel.getChannel(presence.sender, self.parent)
 
-        if gr.name in ch.groups:
-            # We are already in the group, it just status changed to
-            # 'Away' or something like this.
-            # TODO broadcast status...
-            return
-        else:
-            try:
-                gr.join(ch, nick)
-            except PresenceException as ex:
-                raise error.StanzaError(ex.tag, type=ex.stanzaType)
+            if gr.name in ch.groups:
+                # We are already in the group, it just status changed to
+                # 'Away' or something like this.
+                # TODO broadcast status...
+                return
+            else:
+                try:
+                    gr.join(ch, nick)
+                except PresenceException as ex:
+                    raise error.StanzaError(ex.tag, type=ex.stanzaType)
+        except error.StanzaError as ex:
+            sender = presence.sender.full()
+            recipient = presence.recipient.full()
+
+            reply = ex.toResponse(presence)
+
+            self.send(reply)
+
 
     def unavailableReceived(self, presence):
         group, nick = resolveGroup(presence.recipient)
