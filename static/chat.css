@@ -1,10 +1,11 @@
+body {
+    background: white;
+    font-family: Arial, san-serif;
+}
+
 #chat {
     margin: 10px;
     width: 79%;
-    border: 2px solid black;
-    border-radius: 5px;
-    background: #fff4f4;
-    font-family: Arial, san-serif;
     min-height: 10em;
     padding: 0.5ex;
     white-space: pre-wrap;
@@ -66,13 +67,18 @@ div.subject {
     left: 5px;
     right: 5px;
     bottom: 6em;
-    background: solid white;
 }
 
 #input {
     margin: 10px;
     height: 5em;
     width: 80%;
+}
+
+#inputline {
+    border: black solid 1px;
+    border-radius: 5px;
+    padding: 5px;
 }
 
 #roster {
@@ -86,11 +92,8 @@ div.subject {
 
 #roster-list {
     list-style: none;
-    border: 2px solid black;
-    border-radius: 5px 0px 0px 5px;
     padding: 2px;
     min-height: 5em;
-    background: #f8f8ff;
     margin: 0 0 0.5em 0;
 }
 
