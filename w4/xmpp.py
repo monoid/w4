@@ -1,13 +1,13 @@
 from twisted.application import strports
 from twisted.words.protocols.jabber import jid, error
 from twisted.words.xish import domish
-from wokkel import component, disco, iwokkel, muc, server, xmppim
+from wokkel import component, disco, delay, iwokkel, muc, server, xmppim
 from zope.interface import implements
 
 from .groups import Group, BaseChannel, PresenceException
 from .ifaces import IChannel
 
-from datetime import datetime
+import datetime
 
 LOG = True
 
@@ -37,6 +37,35 @@ class OurUserPresence(muc.UserPresence):
         item['role'] = self.role
         for s in self.mucStatuses:
             emuc.addElement((muc.NS_MUC_USER, 'status'))['code'] = str(s)
+        return element
+
+class Utc(datetime.tzinfo):
+    ZERO = datetime.timedelta(0)
+    """ UTC timezone"""
+    def utcoffset(self, dt):
+        return self.ZERO
+    def tzname(self, dt):
+        return "UTC"
+    def dst(self, dt):
+        return self.ZERO
+
+UTC = Utc()
+
+class GroupChat(muc.GroupChat):
+    def toElement(self, legacyDelay=False):
+        """
+        Render into a domish Element.
+
+        @param legacyDelay: If C{True} send the delayed delivery information
+        in legacy format too.
+        """
+        element = xmppim.Message.toElement(self)
+
+        if self.delay:
+            element.addChild(self.delay.toElement(legacy=False))
+            if legacyDelay:
+                element.addChild(self.delay.toElement(legacy=True))
+
         return element
 
 
@@ -84,12 +113,14 @@ class XMPPChannel(BaseChannel):
 
         # Send history if user needs it.
         for msg in gr.history:
-            reply = muc.GroupChat(self.jid,
-                                  gr.userJid(msg['user']), body=unicode(msg['message']))
+            reply = GroupChat(self.jid,
+                              gr.userJid(msg['user']),
+                              body=unicode(msg['message']))
 
-            ts = datetime.fromtimestamp(int(msg['ts'] / 1000)).isoformat()  # TODO: Z
+            ts = datetime.datetime.fromtimestamp(int(msg['ts'])/1000.0, UTC)
+            reply.delay = delay.Delay(ts, gr.jid)
 
-            self.comp.send(reply.toElement(ts))
+            self.comp.send(reply.toElement(True))
 
         # Send room subject
         reply = muc.GroupChat(self.jid, gr.jid, subject=gr.subject)
