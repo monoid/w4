@@ -1,6 +1,5 @@
 from twisted.application import strports
 from twisted.words.protocols.jabber import jid, error
-from twisted.words.xish import domish
 from wokkel import component, disco, delay, iwokkel, muc, server, xmppim
 from zope.interface import implements
 
@@ -44,11 +43,13 @@ class Utc(datetime.tzinfo):
     """ UTC timezone implementation.
     """
     ZERO = datetime.timedelta(0)
-    """ UTC timezone"""
+
     def utcoffset(self, dt):
         return self.ZERO
+
     def tzname(self, dt):
         return "UTC"
+
     def dst(self, dt):
         return self.ZERO
 
@@ -126,7 +127,7 @@ class XMPPChannel(BaseChannel):
                               gr.userJid(msg['user']),
                               body=unicode(msg['message']))
 
-            ts = datetime.datetime.fromtimestamp(int(msg['ts'])/1000.0, UTC)
+            ts = datetime.datetime.fromtimestamp(int(msg['ts']) / 1000.0, UTC)
             reply.delay = delay.Delay(ts, gr.jid)
 
             self.comp.send(reply.toElement(True))
