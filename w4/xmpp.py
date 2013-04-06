@@ -68,33 +68,19 @@ class XMPPChannel(BaseChannel):
         for un in users:
             if myname == un:
                 continue
-            reply = domish.Element(('jabber.client', 'presence'),
-                                   attribs={'from': gr.userJid(un).full(),
-                                            'to': self.getJidStr()})
-
-            x = domish.Element((muc.NS_MUC_USER, 'x'))
-            item = domish.Element((muc.NS_MUC_USER, 'item'),
-                                  attribs={'affiliation': 'member',
-                                           'role': 'participant'})
-
-            x.addChild(item)
-            reply.addChild(x)
-            self.comp.send(reply)
+            self.sendMessages([{
+                'cmd': 'join',
+                'group': gr.name,
+                'user': un
+            }])
 
         # Send self name to user with status code 110
-        reply = domish.Element(('jabber.client', 'presence'),
-                               attribs={'from': self.jidInGroup(gr.name).full(),
-                                        'to': self.jid.full()})
-        x = domish.Element((muc.NS_MUC_USER, 'x'))
-        item = domish.Element((muc.NS_MUC_USER, 'item'),
-                              attribs={'affiliation': 'member',
-                                       'role': 'participant'})
-        status = domish.Element((muc.NS_MUC_USER, 'status'),
-                                attribs={'code': '110'})
-        x.addChild(item)
-        x.addChild(status)
-        reply.addChild(x)
-        self.comp.send(reply)
+        # The code is added by sendMessages
+        self.sendMessages([{
+            'cmd': 'join',
+            'group': gr.name,
+            'user': myname
+        }])
 
         # Send history if user needs it.
         for msg in gr.history:
@@ -128,6 +114,9 @@ class XMPPChannel(BaseChannel):
                 reply = OurUserPresence(recipient=self.jid,
                                         sender=gr.userJid(m['user']),
                                         available=True)
+                usr = self.groups[m['group']]
+                if usr.nick == m['user']:
+                    reply.mucStatuses.add(110)
                 reply.role = 'participant'
                 reply.affiliation = 'member'
                 self.comp.send(reply.toElement())
