@@ -123,7 +123,8 @@ class Group:
 
             self.broadcast({
                 'cmd': 'join',
-                'user': nickname
+                'user': nickname,
+                'except': nickname
             })
             return True
         else:
@@ -148,7 +149,10 @@ class Group:
         message['group'] = self.name
         self.history.message(message)
         for usr in self.channels.values():
-            usr.channel.sendMessages([message])
+            if message.get('except', None) == usr.nick:
+                continue
+            else:
+                usr.channel.sendMessages([message])
 
     def __getinitargs__(self):
         return self.name, self.jid.host
