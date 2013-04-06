@@ -39,7 +39,10 @@ class OurUserPresence(muc.UserPresence):
             emuc.addElement((muc.NS_MUC_USER, 'status'))['code'] = str(s)
         return element
 
+
 class Utc(datetime.tzinfo):
+    """ UTC timezone implementation.
+    """
     ZERO = datetime.timedelta(0)
     """ UTC timezone"""
     def utcoffset(self, dt):
@@ -51,7 +54,13 @@ class Utc(datetime.tzinfo):
 
 UTC = Utc()
 
+
 class GroupChat(muc.GroupChat):
+    """ Groupchat message that always insert delay tag if available, and if
+    legacyDelay is set, also insert legacy delay tag.
+
+    Original implementation inserts only single tag.
+    """
     def toElement(self, legacyDelay=False):
         """
         Render into a domish Element.
