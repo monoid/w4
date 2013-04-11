@@ -38,7 +38,7 @@
 }
 
 div.subject {
-    margin-top: 0.5em;
+    margin-top: 0.5em !important;
     font-size: 112%;
 }
 
