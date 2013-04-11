@@ -145,11 +145,6 @@ class XMPPChannel(BaseChannel):
                 reply = muc.GroupChat(self.jid, gr.userJid(m['user']),
                                       body=unicode(m['message']))
                 self.comp.send(reply.toElement())
-            elif cmd == 'me':
-                gr = Group.find(m['group'])
-                reply = muc.GroupChat(self.jid, gr.userJid(m['user']),
-                                      body=unicode(u'/me ' + m['message']))
-                self.comp.send(reply.toElement())
             elif cmd == 'join':
                 gr = Group.find(m['group'])
                 reply = OurUserPresence(recipient=self.jid,

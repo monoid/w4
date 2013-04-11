@@ -67,8 +67,12 @@ var ChatWindow = Backbone.View.extend({
         }
         switch (obj.cmd) {
         case 'say':
-            msg.append($('<span class="nick">').text(obj.user+": "),
-                       $('<span class="say">').text(obj.message));
+            if (obj.message.startsWith('/me ')) {
+                msg.append($('<span class="me">').text(obj.user+" "+obj.message.substr(4)));
+            } else {
+                msg.append($('<span class="nick">').text(obj.user+": "),
+                           $('<span class="say">').text(obj.message));
+            }
             break;
 
         case 'join':

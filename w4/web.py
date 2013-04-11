@@ -208,18 +208,11 @@ class Post(Resource):
 
         nickname = chan.groups.get(group.name).nick
         if nickname:
-            if msg.startswith("/me "):
-                message = {
-                    'cmd': 'me',
-                    'user': nickname,
-                    'message': msg[4:]
-                }
-            else:
-                message = {
-                    'cmd': 'say',
-                    'user': nickname,
-                    'message': msg
-                }
+            message = {
+                'cmd': 'say',
+                'user': nickname,
+                'message': msg
+            }
 
             group.broadcast(message)
             return "OK"
