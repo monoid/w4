@@ -37,6 +37,11 @@
     color: blue;
 }
 
+div.subject {
+    margin-top: 0.5em;
+    font-size: 112%;
+}
+
 .subject {
     color: brown;
 }
@@ -49,6 +54,10 @@
     width: 80%;
     border-top: 1px solid;
     padding-top: 0.2em;
+}
+
+#chat div {
+    margin-top: 0.2em;
 }
 
 #login {

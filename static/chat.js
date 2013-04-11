@@ -61,7 +61,7 @@ var ChatWindow = Backbone.View.extend({
             dt.appendTo(this.$el);
         }
 
-        var msg = $('<div>')
+        var msg = $('<div>');
         if (obj.cmd != 'subject' && obj.cmd != 'error') {
             msg.append($('<span class="ts">').text('['+hourfmt(ts)+'] '));
         }
@@ -103,7 +103,7 @@ var ChatWindow = Backbone.View.extend({
             break;
 
         case 'subject':
-            msg.append($('<span class="subject">').text("Subject: "+obj.message));
+            msg.addClass('subject').append($('<span class="subject">').text("Subject: "+obj.message));
             break;
 
         case 'error':
