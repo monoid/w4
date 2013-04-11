@@ -62,7 +62,7 @@ var ChatWindow = Backbone.View.extend({
         }
 
         var msg = $('<div>');
-        if (obj.cmd != 'subject' && obj.cmd != 'error') {
+        if (obj.cmd != 'subject' && obj.cmd != 'error' && obj.cmd != 'bye') {
             msg.append($('<span class="ts">').text('['+hourfmt(ts)+'] '));
         }
         switch (obj.cmd) {
