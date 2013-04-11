@@ -167,14 +167,13 @@ class Login(Resource):
                                    'message': 'Group does not exist'
                                }])
 
-        roster = {'users': group.users()}
-
         try:
             chan = IChannel(session)
 
             group.join(chan, nickname)
 
             # FIXME This should be done in a HTTPChannel.sendInitialInfo method.
+            roster = {'users': group.users()}
             return json.dumps(roster)
         except PresenceException as ex:
             return json.dumps([{
