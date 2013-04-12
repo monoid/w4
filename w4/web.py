@@ -112,7 +112,9 @@ class HTTPChannel(BaseChannel):
             self.poll.setHeader(
                 'Cache-Control',
                 'no-store, no-cache, must-revalidate, max-age=0')
-            json.dump(self.messages, self.poll)
+            response = json.dumps(self.messages)
+            self.poll.setHeader('Content-length', str(len(response)))
+            self.poll.write(response)
             self.poll.finish()
             self.poll = None
             self.ts = None
@@ -167,6 +169,7 @@ class Login(Resource):
                                    'message': 'Group does not exist'
                                }])
 
+        request.setHeader('Content-type', 'application/json')
         try:
             chan = IChannel(session)
 
@@ -174,7 +177,9 @@ class Login(Resource):
 
             # FIXME This should be done in a HTTPChannel.sendInitialInfo method.
             roster = {'users': group.users()}
-            return json.dumps(roster)
+            response = json.dumps(roster)
+            request.setHeader('Content-length', str(len(response)))
+            return response
         except PresenceException as ex:
             return json.dumps([{
                                    'cmd': 'error',
