@@ -113,7 +113,22 @@ class HTTPChannel(BaseChannel):
                 'Cache-Control',
                 'no-store, no-cache, must-revalidate, max-age=0')
             response = json.dumps(self.messages)
-            self.poll.setHeader('Content-length', str(len(response)))
+
+            rlen = len(response)
+
+            # EXPERIMENTAL
+            if rlen > 20:
+                # Gzip content
+                self.poll.setHeader('Content-encoding', 'gzip')
+                import gzip, cStringIO
+                out = cStringIO.StringIO()
+                gz = gzip.GzipFile('', 'wb', 1, out)
+                gz.write(response)
+                gz.close()
+                response = out.getvalue()
+                rlen = len(response)
+
+            self.poll.setHeader('Content-length', rlen)
             self.poll.write(response)
             self.poll.finish()
             self.poll = None
