@@ -1,8 +1,9 @@
 from twisted.application import internet
 from twisted.python.components import registerAdapter
 from twisted.web import static, server
-from twisted.web.resource import Resource
+from twisted.web.resource import Resource, EncodingResourceWrapper
 from zope.interface import Interface, Attribute, implements
+from twbits.web import SmartGzipEncoderFactory
 
 from .groups import Group, BaseChannel, PresenceException
 from .ifaces import IChannel
@@ -263,7 +264,7 @@ ajax = static.File("static/no-such-file")
 
 root.putChild("ajax", ajax)
 
-ajax.putChild("poll", Poll())
+ajax.putChild("poll", EncodingResourceWrapper(Poll(), [SmartGzipEncoderFactory()]))
 ajax.putChild("post", Post())
 ajax.putChild("login", Login())
 ajax.putChild("logout", Logout())
