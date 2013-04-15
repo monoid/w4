@@ -106,7 +106,7 @@ class Group:
         if self.public:
             if nickname in self.channels:
                 if self.channels[nickname].channel == chan:
-                    # returning user with same nickname.
+                    chan.sendSecondaryInfo(self)
                     return True
                 else:
                     raise NickConflictException()

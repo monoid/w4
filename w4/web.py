@@ -100,6 +100,9 @@ class HTTPChannel(BaseChannel):
         self.sendMessages(hist)
         # Roster is returned as reply to login request... TODO FIXME
 
+    def sendSecondaryInfo(self, group):
+        self.sendInitialInfo(group)
+
     def sendMessages(self, messages):
         if len(self.messages) >= 100:
             self.messages = messages

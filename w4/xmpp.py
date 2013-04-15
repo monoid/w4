@@ -136,6 +136,9 @@ class XMPPChannel(BaseChannel):
         reply = muc.GroupChat(self.jid, gr.jid, subject=gr.subject)
         self.comp.send(reply.toElement())
 
+    def sendSecondaryInfo(self, group):
+        pass
+
     def sendMessages(self, msgs):
         for m in msgs:
             cmd = m['cmd']

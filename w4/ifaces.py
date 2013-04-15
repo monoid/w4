@@ -24,6 +24,11 @@ class IChannel(Interface):
         """ Send group's initial info on join.
         """
 
+    def sendSecondaryInfo(self, group):
+        """ Send group's info when users joins group he already in
+        (may happen) with web users.
+        """
+
     def sendMessages(self, messages):
         """ Send array of messages to channel.
         """
