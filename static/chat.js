@@ -87,15 +87,13 @@ var ChatWindow = Backbone.View.extend({
             msg.append($('<span>').addClass(obj.cmd)
                        .text(obj.user+" joins."));
 
-            $('#roster-list').append($("<li>").text(obj.user));
+            this.options.rosterwin.addUser(obj.user);
             break;
 
         case 'leave':
             msg.append($('<span>').addClass(obj.cmd)
                        .text(obj.user+" leaves."));
-            $('#roster-list>li').filter(function (li) {
-                return ($(this).text() == obj.user);
-            }).eq(0).remove();
+            this.options.rosterwin.delUser(obj.user);
             break;
 
         case 'ping':
@@ -135,6 +133,28 @@ var ChatWindow = Backbone.View.extend({
     }
 });
 
+var Roster = Backbone.View.extend({
+    events: {
+        'click .nick': 'clickNick'
+    },
+
+    addUser: function (nick) {
+        var rosterList = $(this.el);
+        rosterList.append($('<li class="nick">').text(nick));
+    },
+
+    delUser: function (nick) {
+        this.$('li').filter(function (li) {
+            return ($(this).text() == nick);
+        }).eq(0).remove();
+    },
+
+    clickNick: function (evt) {
+        var nick = $(evt.target).text();
+        this.options.inputwin.clickNick(nick);
+    }
+});
+
 var LoginWindow = Backbone.View.extend({
     el: $('#login'),
     events: {
@@ -143,17 +163,15 @@ var LoginWindow = Backbone.View.extend({
     
     login: function () {
         var username = $('#username').val().trim();
+        var self = this;
         if (username) {
             $.ajax({ url: '/ajax/login',
                      data: { 'name': username, group: this.options.group },
                      dataType: 'json',
                      type: 'POST',
                      success: function (data) {
-                         // TODO: dedicated class for roster that handles duplicated
-                         // entries
-                         var rosterList = $('#roster-list');
                          for (var i in data.users) {
-                             rosterList.append($("<li>").text(data.users[i]));
+                             self.options.rosterwin.addUser(data.users[i]);
                          }
                      }
                    });
@@ -212,10 +230,14 @@ var inputwin;
 
 $(document).ready(function () {
     inputwin = new InputWin({el: '#input', group: 'test'});
+    var rosterwin = new Roster({el: '#roster-list',
+                                inputwin: inputwin
+                               });
     chatwin = new ChatWindow({
         el: '#chat',
         group: 'test',
-        inputwin: inputwin
+        inputwin: inputwin,
+        rosterwin: rosterwin
     });
     var logoutwin = new LogoutWindow({
         el: '#logout',
@@ -226,6 +248,7 @@ $(document).ready(function () {
         chatwin: chatwin,
         inputwin: inputwin,
         logoutwin: logoutwin,
+        rosterwin: rosterwin,
         group: 'test'
     });
     poll();
