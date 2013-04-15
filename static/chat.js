@@ -76,10 +76,13 @@ var ChatWindow = Backbone.View.extend({
         switch (obj.cmd) {
         case 'say':
             if (obj.message.startsWith('/me ')) {
-                msg.append($('<span class="me">').text(obj.user+" "+obj.message.substr(4)));
+                var me = $('<span class="me">');
+                me.append($('<span class="nick">').text(obj.user),
+                         $('<span>').text(" "+obj.message.substr(4)));
+                msg.append(me);
             } else {
-                msg.append($('<span class="nick">').text(obj.user+": "),
-                           $('<span class="say">').text(obj.message));
+                msg.append($('<span class="nick">').text(obj.user),
+                           $('<span class="say">').text(": "+obj.message));
             }
             break;
 
@@ -127,8 +130,6 @@ var ChatWindow = Backbone.View.extend({
 
     clickNick: function (evt) {
         var nick = $(evt.target).text();
-        // Trim ": " at end
-        nick = nick.substr(0, nick.length-2);
         this.options.inputwin.clickNick(nick);
     }
 });
