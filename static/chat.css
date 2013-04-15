@@ -14,7 +14,7 @@
     color: #C00;
 }
 
-.nick {
+#chat .nick {
     color: brown;
 }
 
@@ -107,4 +107,8 @@ div.subject {
 
 #logout {
     text-align: center;
+}
+
+.nick {
+    cursor: pointer;
 }
