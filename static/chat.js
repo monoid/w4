@@ -33,11 +33,19 @@ var InputWin = Backbone.View.extend({
                  type: 'POST'
                });
         $("#inputline").val('').focus();
+    },
+    clickNick: function (nick) {
+        $('#inputline').val($('#inputline').val() + nick + ': ');
     }
 });
 
 var ChatWindow = Backbone.View.extend({
     prevTs: null,
+
+    events: {
+        'click .nick': 'clickNick'
+    },
+
     show: function () {
             this.$el.show();
     },
@@ -117,6 +125,13 @@ var ChatWindow = Backbone.View.extend({
             break;
         }
         msg.appendTo(this.$el);
+    },
+
+    clickNick: function (evt) {
+        var nick = $(evt.target).text();
+        // Trim ": " at end
+        nick = nick.substr(0, nick.length-2);
+        this.options.inputwin.clickNick(nick);
     }
 });
 
