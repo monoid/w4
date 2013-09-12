@@ -256,10 +256,6 @@ class W4ChanGcService(internet.TimerService):
 # Setup site
 #
 
-# Create test group
-test = Group('test')
-test.subject = "Testing group"
-
 root = static.File("static/")
 
 ajax = static.File("static/no-such-file")

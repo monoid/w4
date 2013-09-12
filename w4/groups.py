@@ -65,7 +65,7 @@ class Group:
     # Class attribute
     groups = {}
 
-    def __init__(self, name, host='ibhome.mesemb.ru'):
+    def __init__(self, name, host):
         self.name = name
         self.channels = {}
         self.history = History()
