@@ -144,12 +144,12 @@ class XMPPChannel(BaseChannel):
             cmd = m['cmd']
 
             if cmd == 'say':
-                gr = Group.find(m['group'])
+                gr = self.groups[m['group']].group
                 reply = muc.GroupChat(self.jid, gr.userJid(m['user']),
                                       body=unicode(m['message']))
                 self.comp.send(reply.toElement())
             elif cmd == 'join':
-                gr = Group.find(m['group'])
+                gr = self.groups[m['group']].group
                 reply = OurUserPresence(recipient=self.jid,
                                         sender=gr.userJid(m['user']),
                                         available=True)
@@ -160,7 +160,7 @@ class XMPPChannel(BaseChannel):
                 reply.affiliation = 'member'
                 self.comp.send(reply.toElement())
             elif cmd == 'leave':
-                gr = Group.find(m['group'])
+                gr = self.groups[m['group']].group
                 reply = OurUserPresence(recipient=self.jid,
                                         sender=gr.userJid(m['user']),
                                         available=False)
@@ -185,12 +185,12 @@ class XMPPChannel(BaseChannel):
         del XMPPChannel.jids[self.jid.full()]
 
     @classmethod
-    def getChannel(cls, jid, comp):
+    def getChannel(cls, jid, comp, groupset):
         sjid = jid.full()
         if sjid in cls.jids:
             return cls.jids[sjid]
         else:
-            return XMPPChannel(jid, comp)
+            return XMPPChannel(jid, comp, groupset)
 
     @classmethod
     def isMember(cls, jid, group):
@@ -199,16 +199,20 @@ class XMPPChannel(BaseChannel):
 
 
 class PresenceHandler(xmppim.PresenceProtocol):
+    def __init__(self, groupset):
+        xmppim.PresenceProtocol.__init__(self)
+        self.groupset = groupset
+
     def availableReceived(self, presence):
         try:
             group, nick = resolveGroup(presence.recipient)
 
-            gr = Group.find(group)
+            gr = self.groupset.find(group)
 
             if gr is None:
                 raise error.StanzaError('not-allowed', type='cancel')
 
-            ch = XMPPChannel.getChannel(presence.sender, self.parent)
+            ch = XMPPChannel.getChannel(presence.sender, self.parent, groupset)
 
             if gr.name in ch.groups:
                 # We are already in the group, it just status changed to
@@ -226,7 +230,7 @@ class PresenceHandler(xmppim.PresenceProtocol):
 
     def unavailableReceived(self, presence):
         group, nick = resolveGroup(presence.recipient)
-        gr = Group.find(group)
+        gr = self.groupset.find(group)
 
         if gr and nick in gr.channels:
             ch = gr.channels[nick].channel
@@ -237,12 +241,16 @@ class PresenceHandler(xmppim.PresenceProtocol):
 class ChatHandler(xmppim.MessageProtocol):
     implements(iwokkel.IDisco)
 
+    def __init__(self, groupset):
+        xmppim.MessageProtocol.__init__(self)
+        self.groupset = groupset
+
     def onMessage(self, message):
         try:
             msgType = message.getAttribute('type')
             group, nick = resolveGroup(message.getAttribute('to'))
 
-            gr = Group.groups.get(group)
+            gr = self.groupset.groups.get(group)
 
             frm = message.getAttribute('from')
 
@@ -272,8 +280,8 @@ class ChatHandler(xmppim.MessageProtocol):
 
     def getDiscoInfo(self, req, target, ni):
         group, nick = resolveGroup(target)
-        if group in Group.groups and not ni:
-            gr = Group.find(group)
+        if group in self.groupset.groups and not ni:
+            gr = self.groupset.find(group)
             if nick:
                 if XMPPChannel.isMember(req.full(), gr):
                     # TODO
@@ -295,7 +303,7 @@ class ChatHandler(xmppim.MessageProtocol):
         if group is None:
             # Return list of groups
             items = [disco.DiscoItem(gr.groupJid(), name=gr.name)
-                     for gr in Group.groups.values()]
+                     for gr in self.groupset.groups.values()]
             return items
         else:
             # TODO
@@ -303,7 +311,7 @@ class ChatHandler(xmppim.MessageProtocol):
 
 
 #########################################################################
-def buildXMPPApp(domain, port, secret, application):
+def buildXMPPApp(domain, port, secret, groupset, application):
     router = component.Router()
     serverService = server.ServerService(router, domain=domain, secret=secret)
     serverService.logTraffic = LOG
@@ -317,10 +325,10 @@ def buildXMPPApp(domain, port, secret, application):
     w4Comp.logTraffic = LOG
     w4Comp.setServiceParent(application)
 
-    presenceHandler = PresenceHandler()
+    presenceHandler = PresenceHandler(groupset)
     presenceHandler.setHandlerParent(w4Comp)
 
-    chatHandler = ChatHandler()
+    chatHandler = ChatHandler(groupset)
     chatHandler.setHandlerParent(w4Comp)
 
     discoHandler = disco.DiscoHandler()

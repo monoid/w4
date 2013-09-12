@@ -159,11 +159,15 @@ registerAdapter(HTTPChannel, server.Session, IChannel)
 class Login(Resource):
     isLeaf = True
 
+    def __init__(self, groupset):
+        Resource.__init__(self)
+        self.groupset = groupset
+
     def render_POST(self, request):
         session = request.getSession()
 
         nickname = request.args['name'][0]
-        group = Group.find(request.args['group'][0])
+        group = self.groupset.find(request.args['group'][0])
 
         if group is None:
             return json.dumps([{
@@ -204,11 +208,15 @@ class Logout(Resource):
 class Post(Resource):
     isLeaf = True
 
+    def __init__(self, groupset):
+        Resource.__init__(self)
+        self.groupset = groupset
+
     def render_POST(self, request):
         session = request.getSession()
         chan = IChannel(session)
         msg = request.args.get('message', ['Error'])[0].decode('utf-8').strip()
-        group = Group.find(request.args.get('group', [None])[0])
+        group = self.groupset.find(request.args.get('group', [None])[0])
 
         if group is None:
             return "Error: group not found"
@@ -256,15 +264,18 @@ class W4ChanGcService(internet.TimerService):
 # Setup site
 #
 
-root = static.File("static/")
+def buildSite(groupset):
+    root = static.File("static/")
 
-ajax = static.File("static/no-such-file")
+    ajax = static.File("static/no-such-file")
 
-root.putChild("ajax", ajax)
+    root.putChild("ajax", ajax)
 
-ajax.putChild("poll", Poll())
-ajax.putChild("post", Post())
-ajax.putChild("login", Login())
-ajax.putChild("logout", Logout())
+    ajax.putChild("poll", Poll())
+    ajax.putChild("post", Post(groupset))
+    ajax.putChild("login", Login(groupset))
+    ajax.putChild("logout", Logout())
 
-site = server.Site(root)
+    site = server.Site(root)
+
+    return site

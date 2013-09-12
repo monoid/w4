@@ -62,16 +62,13 @@ class Group:
     subject = None
     jid = None
 
-    # Class attribute
-    groups = {}
-
-    def __init__(self, name, host):
+    def __init__(self, name, host, groupset):
         self.name = name
         self.channels = {}
         self.history = History()
         self.jid = JID(tuple=(self.name, host, None))
 
-        Group.groups[name] = self
+        groupset.groups[name] = self
 
     def groupJid(self):
         """ :rtype JID
@@ -179,21 +176,22 @@ class Group:
                    'muc_persistent',
                    'muc_unsecured'])
 
-    @classmethod
-    def find(cls, groupname):
-        return cls.groups.get(groupname)
+class Groupset:
+    def __init__(self):
+        self.groups = {}
 
-    @classmethod
-    def saveGroups(cls, outf):
+    def find(self, groupname):
+        return self.groups.get(groupname)
+
+    def saveGroups(self, outf):
         import pickle
-        pickle.dump(cls.groups.values(), outf)
+        pickle.dump(self.groups.values(), outf)
 
-    @classmethod
-    def loadGroups(cls, inf):
+    def loadGroups(self, inf):
         import pickle
         groups = pickle.load(inf)
         for group in groups:
-            cls.groups[group.name] = group
+            self.groups[group.name] = group
 
 
 class BaseChannel():
@@ -217,8 +215,8 @@ class BaseChannel():
         return self.groups[group].jid
 
     def close(self):
-        for group in self.groups.keys():
-            Group.find(group).leave(self)
+        for user in self.groups.values():
+            user.group.leave(self)
 
 
 class MUCUser():

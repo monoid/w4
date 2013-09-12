@@ -9,6 +9,7 @@ CONFIG = {
     'port': 8765,              # Webserver port
     'host': 'yourdomain.tld',  # Your domain name for XMPP
     'secret': 'av3fad',
+    'history': 'history.pickle',
 }
 
 application = service.Application("W4 chat")
