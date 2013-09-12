@@ -3,7 +3,8 @@ from twisted.python.components import registerAdapter
 from twisted.python import log
 
 from .groups import Group
-from .web import W4ChanGcService, site
+from w4 import web
+from w4 import xmpp
 
 from collections import deque
 
@@ -62,5 +63,24 @@ class W4Service(service.MultiService):
         autosave = W4AutosaveService(histfile)
         autosave.setServiceParent(self)
 
-        changc = W4ChanGcService()
+        changc = web.W4ChanGcService()
         changc.setServiceParent(self)
+
+
+def buildApp(application, config):
+    service = W4Service("history.pickle")
+    service.setServiceParent(application)
+
+    server = internet.TCPServer(config['port'], web.site)
+    server.setServiceParent(application)
+
+    xmpp.buildXMPPApp(config['host'],
+        ('tcp:5269:interface=%s' % (config['host'],)),
+        config['secret'],
+        application)
+
+    # Create test group
+    test = Group('test', config['host'])
+    test.subject = "Testing group"
+
+    return application
