@@ -174,19 +174,13 @@ class Group:
                    'muc_persistent',
                    'muc_unsecured'])
 
-class Groupset:
-    def __init__(self):
-        self.groups = {}
-
+class Groupset(dict):
     def addGroup(self, group):
-        self.groups[group.name] = group
-
-    def find(self, groupname):
-        return self.groups.get(groupname)
+        self[group.name] = group
 
     def saveGroups(self, outf):
         import pickle
-        pickle.dump(self.groups.values(), outf)
+        pickle.dump(self.values(), outf)
 
     def loadGroups(self, inf):
         import pickle

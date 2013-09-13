@@ -207,7 +207,7 @@ class PresenceHandler(xmppim.PresenceProtocol):
         try:
             group, nick = resolveGroup(presence.recipient)
 
-            gr = self.groupset.find(group)
+            gr = self.groupset.get(group)
 
             if gr is None:
                 raise error.StanzaError('not-allowed', type='cancel')
@@ -230,7 +230,7 @@ class PresenceHandler(xmppim.PresenceProtocol):
 
     def unavailableReceived(self, presence):
         group, nick = resolveGroup(presence.recipient)
-        gr = self.groupset.find(group)
+        gr = self.groupset.get(group)
 
         if gr and nick in gr.channels:
             ch = gr.channels[nick].channel
@@ -250,7 +250,7 @@ class ChatHandler(xmppim.MessageProtocol):
             msgType = message.getAttribute('type')
             group, nick = resolveGroup(message.getAttribute('to'))
 
-            gr = self.groupset.groups.get(group)
+            gr = self.groupset.get(group)
 
             frm = message.getAttribute('from')
 
@@ -280,8 +280,8 @@ class ChatHandler(xmppim.MessageProtocol):
 
     def getDiscoInfo(self, req, target, ni):
         group, nick = resolveGroup(target)
-        if group in self.groupset.groups and not ni:
-            gr = self.groupset.find(group)
+        if group in self.groupset and not ni:
+            gr = self.groupset.get(group)
             if nick:
                 if XMPPChannel.isMember(req.full(), gr):
                     # TODO
@@ -303,7 +303,7 @@ class ChatHandler(xmppim.MessageProtocol):
         if group is None:
             # Return list of groups
             items = [disco.DiscoItem(gr.groupJid(), name=gr.name)
-                     for gr in self.groupset.groups.values()]
+                     for gr in self.groupset.values()]
             return items
         else:
             # TODO

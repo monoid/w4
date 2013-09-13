@@ -167,7 +167,7 @@ class Login(Resource):
         session = request.getSession()
 
         nickname = request.args['name'][0]
-        group = self.groupset.find(request.args['group'][0])
+        group = self.groupset.get(request.args['group'][0])
 
         if group is None:
             return json.dumps([{
@@ -216,7 +216,7 @@ class Post(Resource):
         session = request.getSession()
         chan = IChannel(session)
         msg = request.args.get('message', ['Error'])[0].decode('utf-8').strip()
-        group = self.groupset.find(request.args.get('group', [None])[0])
+        group = self.groupset.get(request.args.get('group', [None])[0])
 
         if group is None:
             return "Error: group not found"
