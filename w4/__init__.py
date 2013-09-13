@@ -83,7 +83,8 @@ def buildApp(application, config):
         application)
 
     # Create test group
-    test = Group('test', config['host'], groupset)
+    test = Group('test', config['host'])
     test.subject = "Testing group"
+    groupset.addGroup(test)
 
     return application

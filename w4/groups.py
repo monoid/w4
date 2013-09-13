@@ -62,13 +62,11 @@ class Group:
     subject = None
     jid = None
 
-    def __init__(self, name, host, groupset):
+    def __init__(self, name, host):
         self.name = name
         self.channels = {}
         self.history = History()
         self.jid = JID(tuple=(self.name, host, None))
-
-        groupset.groups[name] = self
 
     def groupJid(self):
         """ :rtype JID
@@ -180,6 +178,9 @@ class Groupset:
     def __init__(self):
         self.groups = {}
 
+    def addGroup(self, group):
+        self.groups[group.name] = group
+
     def find(self, groupname):
         return self.groups.get(groupname)
 
@@ -191,8 +192,7 @@ class Groupset:
         import pickle
         groups = pickle.load(inf)
         for group in groups:
-            self.groups[group.name] = group
-
+            self.addGroup(group)
 
 class BaseChannel():
     """ Base implementation of channel with utility methods.
