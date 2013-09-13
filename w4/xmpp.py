@@ -190,7 +190,7 @@ class XMPPChannel(BaseChannel):
         if sjid in cls.jids:
             return cls.jids[sjid]
         else:
-            return XMPPChannel(jid, comp, groupset)
+            return XMPPChannel(jid, comp)
 
     @classmethod
     def isMember(cls, jid, group):
@@ -212,7 +212,7 @@ class PresenceHandler(xmppim.PresenceProtocol):
             if gr is None:
                 raise error.StanzaError('not-allowed', type='cancel')
 
-            ch = XMPPChannel.getChannel(presence.sender, self.parent, groupset)
+            ch = XMPPChannel.getChannel(presence.sender, self.parent, self.groupset)
 
             if gr.name in ch.groups:
                 # We are already in the group, it just status changed to
